@@ -5,6 +5,7 @@ import { heroBurger, burger, pizza, noodles, chicken } from "../../data/images.j
 import { Chart, Empty, Food, StatCard, Tag, toast } from "../../ui/components.jsx";
 import { readLocalImage, usePersistentState } from "../../lib/localData.js";
 import { api, formatError } from "../../lib/api.js";
+import Icon from "../../ui/Icon.jsx";
 
 const RESTAURANT_IMAGES = [burger, pizza, noodles, chicken];
 
@@ -36,6 +37,9 @@ export default function RestaurantPortal(props) {
   const [orderError, setOrderError] = useState("");
   const [orderView, setOrderView] = useState("incoming");
   const [prepTimes, setPrepTimes] = useState({});
+
+  // Restaurant detail modal state: review all order line items before accepting a customer order.
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Menu editor modal
   const [editor, setEditor] = useState(null);
@@ -334,14 +338,14 @@ export default function RestaurantPortal(props) {
                     ● {item.available ? "Available" : "Sold Out"}
                   </small>
                   <span>
-                    <button className="btn gh sm" onClick={() => startEdit(item)} aria-label={`Edit ${item.name}`}>✏️</button>
+                    <button className="btn gh sm" onClick={() => startEdit(item)} aria-label={`Edit ${item.name}`}><Icon name="edit" size={16} /></button>
                     <button className="btn gh sm" onClick={() => toggleAvailability(item)}>
                       {item.available ? "Pause" : "Enable"}
                     </button>
                   </span>
                 </div>
               ))}
-              <button className="card add-item" onClick={startAdd}>➕<br />Add Item</button>
+              <button className="card add-item" onClick={startAdd}><Icon name="plus" size={24} /><br />Add Item</button>
             </div>
           </div>
 
@@ -370,7 +374,7 @@ export default function RestaurantPortal(props) {
               .filter((order) => (order.status || "").toUpperCase() === "PENDING")
               .slice(0, 4)
               .map((order) => (
-                <OrderSummary key={order.id} order={order} />
+                <OrderSummary key={order.id} order={order} onViewDetails={() => setSelectedOrder(order)} />
               ))}
             {!sortedOrders.some((order) => (order.status || "").toUpperCase() === "PENDING") && (
               <Empty icon="🛍️">No incoming pending orders. Placed orders will appear here.</Empty>
@@ -394,9 +398,9 @@ export default function RestaurantPortal(props) {
             <h3>Restaurant Info</h3>
             <b>{props.user.name || "Restaurant"}</b> <Tag tone="a">APPROVED</Tag>
             <p>
-              📍 Manila Service Boundary Area<br />
-              🛵 Dispatch: 1 km Ring Blasts upon READY status<br />
-              💰 Commission: ₱0.00 (100% payout to restaurant)
+              <Icon name="mapPin" size={15} /> Manila Service Boundary Area<br />
+              <Icon name="motorcycle" size={15} /> Dispatch: 1 km Ring Blasts upon READY status<br />
+              <Icon name="coins" size={15} /> Commission: ₱0.00 (100% payout to restaurant)
             </p>
           </div>
         </div>
@@ -496,7 +500,9 @@ export default function RestaurantPortal(props) {
           reviews.map((review) => (
             <div className="li" key={review.id}>
               <div className="f">
-                <b>{review.author} · {"★".repeat(review.rating)}</b>
+                <b>{review.author} · <span className="rating-stars" aria-label={`${review.rating} stars`}>
+                  {Array.from({ length: review.rating }, (_, index) => <Icon key={index} name="star" size={14} />)}
+                </span></b>
                 <small>{review.text}</small>
                 <small>Order #{review.orderId}</small>
               </div>
@@ -620,6 +626,58 @@ export default function RestaurantPortal(props) {
             {formError && <div className="msg" role="alert">{formError}</div>}
             <button className="btn" type="submit">Save Menu Item to Database</button>
           </form>
+        </div>
+      )}
+
+      {/* Order details modal: show the full item list and customer information before restaurant action. */}
+      {selectedOrder && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(e) => e.target === e.currentTarget && setSelectedOrder(null)}
+        >
+          <div className="card item-editor" style={{ maxWidth: 560 }}>
+            <div className="row">
+              <div>
+                <h3>Order #{selectedOrder.id} Details</h3>
+                <small>
+                  {selectedOrder.customer?.name || selectedOrder.external_customer_name || "Customer"} · {selectedOrder.delivery_address || "No address provided"}
+                </small>
+              </div>
+              <button type="button" className="ib" onClick={() => setSelectedOrder(null)} aria-label="Close">×</button>
+            </div>
+
+            <div className="order-items" style={{ marginTop: 16 }}>
+              {(Array.isArray(selectedOrder.items) ? selectedOrder.items : []).length ? (
+                (Array.isArray(selectedOrder.items) ? selectedOrder.items : []).map((item) => (
+                  <div key={item.id || `${item.item_name || item.name}-${item.quantity}`} className="li" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <span>
+                      {item.quantity}× {item.item_name || item.name}
+                    </span>
+                    <strong>₱{Number(item.line_total || item.unit_price * item.quantity || 0).toFixed(2)}</strong>
+                  </div>
+                ))
+              ) : (
+                <p style={{ margin: 0, color: "var(--mu)" }}>No items recorded for this order.</p>
+              )}
+            </div>
+
+            <div className="order-total" style={{ marginTop: 18 }}>
+              <span>Total</span>
+              <b>₱{Number(selectedOrder.total || 0).toFixed(2)}</b>
+            </div>
+
+            <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+              <div className="li"><span>Status</span><strong>{selectedOrder.status || "PENDING"}</strong></div>
+              <div className="li"><span>Customer</span><strong>{selectedOrder.customer?.name || selectedOrder.external_customer_name || "Customer"}</strong></div>
+              {selectedOrder.delivery_address && (
+                <div className="li"><span>Address</span><strong>{selectedOrder.delivery_address}</strong></div>
+              )}
+              {selectedOrder.customer?.phone && (
+                <div className="li"><span>Phone</span><strong>{selectedOrder.customer.phone}</strong></div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -751,7 +809,8 @@ export default function RestaurantPortal(props) {
   );
 }
 
-function OrderSummary({ order }) {
+// Summary card for incoming orders: exposes the new detail action next to the status badge.
+function OrderSummary({ order, onViewDetails }) {
   const status = (order.status || "").toUpperCase();
   const [label, tone] = ORDER_STEPS[status] || [status, "w"];
   const items = Array.isArray(order.items) ? order.items : [];
@@ -762,7 +821,10 @@ function OrderSummary({ order }) {
         <small>{items.map((item) => `${item.quantity}× ${item.item_name || item.name}`).join(", ")}</small>
         <small>₱{Number(order.total || 0).toFixed(2)} · {order.customer?.name || order.external_customer_name || "Customer"}</small>
       </div>
-      <Tag tone={tone}>{label}</Tag>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <button className="btn gh sm" type="button" onClick={onViewDetails}>View Details</button>
+        <Tag tone={tone}>{label}</Tag>
+      </div>
     </div>
   );
 }
@@ -861,7 +923,7 @@ function RestaurantOrders({
                     </small>
                     {order.delivery_address && (
                       <div style={{ fontSize: 12, color: "var(--mu)", marginTop: 2 }}>
-                        📍 {order.delivery_address}
+                        <Icon name="mapPin" size={14} /> {order.delivery_address}
                       </div>
                     )}
                   </div>
@@ -886,6 +948,9 @@ function RestaurantOrders({
                   <div className="order-actions">
                     {preparationControl(order)}
                     <div className="order-action-buttons">
+                      <button className="btn gh sm" type="button" onClick={() => setSelectedOrder(order)}>
+                        View Details
+                      </button>
                       <button className="btn gh sm" onClick={() => onReject(order)}>
                         Reject
                       </button>
@@ -920,7 +985,7 @@ function RestaurantOrders({
 
                 {(status === "READY" || status === "SEARCHING_RIDER") && (
                   <p className="order-ready-note" style={{ color: "#2b6cb0", fontWeight: 600 }}>
-                    ✓ Order marked READY! 1 km simultaneous blast active (SEARCHING_RIDER). Waiting for rider acceptance.
+                    <Icon name="check" size={16} /> Order marked READY! 1 km simultaneous blast active (SEARCHING_RIDER). Waiting for rider acceptance.
                   </p>
                 )}
 

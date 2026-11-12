@@ -5,6 +5,7 @@ import { burger, pizza, noodles, chicken, heroBurger } from "../../data/images.j
 import { Empty, Food, RestaurantCard, Tag, toast } from "../../ui/components.jsx";
 import { LOCAL_KEYS, usePersistentState } from "../../lib/localData.js";
 import { api, formatError } from "../../lib/api.js";
+import Icon from "../../ui/Icon.jsx";
 
 const RESTAURANT_IMAGES = [burger, pizza, noodles, chicken];
 const PAYMENT_LABELS = { cod: "Cash on Delivery", gcash: "GCash (Online)", maya: "Maya (Online)" };
@@ -61,7 +62,7 @@ function OrderTimeline({ order }) {
               const isCurrent = index === step && status !== "delivered" && status !== "completed";
               return (
                 <li className={`${isComplete ? "complete" : ""} ${isCurrent ? "current" : ""}`} key={label}>
-                  <span className="timeline-marker" aria-hidden="true">{isComplete ? "✓" : index + 1}</span>
+                  <span className="timeline-marker" aria-hidden="true">{isComplete ? <Icon name="check" size={14} /> : index + 1}</span>
                   <span>{label}</span>
                 </li>
               );
@@ -399,7 +400,7 @@ export default function CustomerPortal(props) {
     if (orderConfirmation) {
       return (
         <section className="card checkout-confirmation" role="status">
-          <span className="confirmation-icon" aria-hidden="true">✓</span>
+          <span className="confirmation-icon" aria-hidden="true"><Icon name="check" size={28} /></span>
           <h3>Order Placed Successfully!</h3>
           <p>
             Your order is now in the database with contract status:{" "}
@@ -691,13 +692,13 @@ export default function CustomerPortal(props) {
             <div>
               <h3>Food Categories</h3>
               <div className="cats">
-                {CATEGORIES.map(([c, e]) => (
+                {CATEGORIES.map(([c, icon]) => (
                   <button
                     key={c}
                     className={`cat ${cat === c ? "on" : ""}`}
                     onClick={() => setCat(c)}
                   >
-                    <em>{e}</em>{c}
+                    <em><Icon name={icon} size={21} /></em>{c}
                   </button>
                 ))}
               </div>
@@ -756,7 +757,7 @@ export default function CustomerPortal(props) {
                   const r = restaurants.find((item) => item.name === name);
                   return (
                     <button key={name} onClick={() => r && openRestaurant(r)}>
-                      ❤️ {name}
+                      <Icon name="heart" size={16} /> {name}
                     </button>
                   );
                 })}
@@ -894,11 +895,11 @@ export default function CustomerPortal(props) {
                 value={rating}
                 onChange={(e) => setRating(e.target.value)}
               >
-                <option value="5">★★★★★ (5 Stars)</option>
-                <option value="4">★★★★☆ (4 Stars)</option>
-                <option value="3">★★★☆☆ (3 Stars)</option>
-                <option value="2">★★☆☆☆ (2 Stars)</option>
-                <option value="1">★☆☆☆☆ (1 Star)</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
               </select>
             </label>
 
@@ -923,7 +924,9 @@ export default function CustomerPortal(props) {
             <div className="li" key={review.id}>
               <div className="f">
                 <b>
-                  {review.restaurant} · {"★".repeat(review.rating)}
+                  {review.restaurant} · <span className="rating-stars" aria-label={`${review.rating} stars`}>
+                    {Array.from({ length: review.rating }, (_, index) => <Icon key={index} name="star" size={14} />)}
+                  </span>
                 </b>
                 <small>{review.text}</small>
               </div>

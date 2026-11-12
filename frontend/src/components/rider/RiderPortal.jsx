@@ -4,6 +4,7 @@ import { heroRider } from "../../data/images.js";
 import { Chart, Empty, Food, Tag, toast } from "../../ui/components.jsx";
 import { usePersistentState } from "../../lib/localData.js";
 import { api, formatError } from "../../lib/api.js";
+import Icon from "../../ui/Icon.jsx";
 
 export default function RiderPortal(props) {
   const [online, setOnline] = useState(true);
@@ -273,7 +274,8 @@ export default function RiderPortal(props) {
               <h2>Welcome Back, <span className="or">{props.user.name.split(" ")[0]}!</span></h2>
               <p>Simultaneous 1 km ring blast dispatch. Fast atomic claim on open offers.</p>
               <button className="btn" onClick={toggleOnline} disabled={!approved || loadingStatus}>
-                {online ? "🟢 You are Online (Go Offline)" : "⚪ You are Offline (Go Online)"}
+                <Icon name="circle" size={12} className={online ? "status-online" : "status-offline"} />
+                {online ? "You are Online (Go Offline)" : "You are Offline (Go Online)"}
               </button>
             </div>
             <Food src={heroRider} />
@@ -371,7 +373,7 @@ export default function RiderPortal(props) {
                     <div className="row">
                       <div>
                         <b>Order #{order.id} · {order.restaurant?.name || "Restaurant"}</b>
-                        <p style={{ margin: "4px 0", fontSize: 13 }}>📍 Deliver to: {order.delivery_address}</p>
+                        <p style={{ margin: "4px 0", fontSize: 13 }}><Icon name="mapPin" size={15} /> Deliver to: {order.delivery_address}</p>
                         <small>
                           Payment: {isCod ? "Cash on Delivery (COD)" : "Paid Online"} · Total: ₱{Number(order.total || 0).toFixed(2)}
                         </small>
@@ -386,7 +388,7 @@ export default function RiderPortal(props) {
                           disabled={busyOrderId === order.id}
                           onClick={() => handlePickup(order)}
                         >
-                          {busyOrderId === order.id ? "Updating…" : "✓ Confirm Pickup (PICKED_UP)"}
+                          {busyOrderId === order.id ? "Updating…" : <><Icon name="check" size={16} /> Confirm Pickup (PICKED_UP)</>}
                         </button>
                       ) : (
                         <>
@@ -414,7 +416,7 @@ export default function RiderPortal(props) {
                             disabled={busyOrderId === order.id}
                             onClick={() => handleDelivered(order)}
                           >
-                            {busyOrderId === order.id ? "Completing…" : "✓ Confirm Delivery (DELIVERED)"}
+                            {busyOrderId === order.id ? "Completing…" : <><Icon name="check" size={16} /> Confirm Delivery (DELIVERED)</>}
                           </button>
                         </>
                       )}
@@ -432,7 +434,7 @@ export default function RiderPortal(props) {
           <div className="card">
             <h3>Rider Status</h3>
             <div className="row">
-              <b>{approved ? (online ? "🟢 Online" : "⚪ Offline") : "Awaiting Approval"}</b>
+              <b>{approved ? <><Icon name="circle" size={11} className={online ? "status-online" : "status-offline"} /> {online ? "Online" : "Offline"}</> : "Awaiting Approval"}</b>
               <button
                 className={`sw ${online ? "on" : ""}`}
                 role="switch"
@@ -444,11 +446,11 @@ export default function RiderPortal(props) {
             </div>
             <div className="row" style={{ marginTop: 12 }}>
               <span>
-                🛵 <b>{completedDeliveries.length}</b>
+                <Icon name="motorcycle" size={16} /> <b>{completedDeliveries.length}</b>
                 <small style={{ display: "block" }}>Completed Deliveries</small>
               </span>
               <span>
-                ⭐ <b>5.0</b>
+                <Icon name="star" size={16} /> <b>5.0</b>
                 <small style={{ display: "block" }}>Rider Rating</small>
               </span>
             </div>
@@ -586,7 +588,7 @@ export default function RiderPortal(props) {
                 <div className="row">
                   <div>
                     <h4>Order #{order.id} · {order.restaurant?.name || "Restaurant"}</h4>
-                    <p style={{ margin: "4px 0" }}>📍 {order.delivery_address}</p>
+                    <p style={{ margin: "4px 0" }}><Icon name="mapPin" size={15} /> {order.delivery_address}</p>
                     <small>
                       Payment: {isCod ? "Cash on Delivery" : "Paid Online"} · Amount: ₱{Number(order.total || 0).toFixed(2)}
                     </small>

@@ -1,10 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { AuthLayout, Logo, toast } from "../ui/components.jsx";
 import { Field, PasswordField, isEmail } from "./Forms.jsx";
-import { ROLES } from "../data/constants.js";
 import { api, setAuthToken, formatError } from "../lib/api.js";
+import Icon from "../ui/Icon.jsx";
 
 const DEMO_OTP = "123456";
+
+// Determine the portal role from the email so users can sign in without the old dropdown selector.
+const EMAIL_ROLE_MAP = [
+  ["customer", "CUSTOMER"],
+  ["restaurant", "RESTAURANT"],
+  ["rider", "RIDER"],
+  ["admin", "ADMIN"],
+];
+
+function detectRoleFromEmail(email = "") {
+  const normalized = (email || "").trim().toLowerCase();
+  if (!normalized) return "CUSTOMER";
+
+  for (const [token, role] of EMAIL_ROLE_MAP) {
+    if (normalized.includes(token)) return role;
+  }
+
+  return "CUSTOMER";
+}
 
 export default function LoginFlow({ onSignedIn, onSwitch }) {
   const [step, setStep] = useState("credentials");
@@ -40,11 +59,13 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
         toast("Note: Your account is pending admin approval. Operational actions will be restricted.");
       }
 
-      // Check role match
+      // Sync role selection to the server response while keeping the email-based routing behavior.
       const serverRole = data.role?.toUpperCase();
-      if (serverRole && serverRole !== form.role) {
-        // Update form role to match server assigned role
+      const detectedRole = detectRoleFromEmail(form.email) || serverRole || form.role;
+      if (serverRole && serverRole !== detectedRole) {
         setForm((prev) => ({ ...prev, role: serverRole }));
+      } else if (detectedRole && detectedRole !== form.role) {
+        setForm((prev) => ({ ...prev, role: detectedRole }));
       }
 
       // Continue to OTP verification step (W1.03)
@@ -88,7 +109,7 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
     <AuthLayout>
       <form className="box login-box" onSubmit={submit} noValidate>
         <div className="login-topline">
-          <button type="button" className="ib login-back" onClick={() => onSwitch("home")} aria-label="Back">←</button>
+          <button type="button" className="ib login-back" onClick={() => onSwitch("home")} aria-label="Back"><Icon name="arrow" size={18} /></button>
           <Logo />
         </div>
         <div className="login-heading">
@@ -96,13 +117,21 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
           <h2>Sign in to DashBite</h2>
           <p>Enter your account details to continue.</p>
         </div>
+        {/* Email-driven role detection is handled here so the login screen stays simple. */}
         <div className="login-field">
           <span>Email address</span>
           <Field icon="✉️">
             <input
               type="email"
               value={form.email}
-              onChange={set("email")}
+              onChange={(event) => {
+                const nextEmail = event.target.value;
+                setForm((prev) => ({
+                  ...prev,
+                  email: nextEmail,
+                  role: detectRoleFromEmail(nextEmail) || prev.role,
+                }));
+              }}
               placeholder="customer@test.com"
               autoComplete="email"
               disabled={loading}
@@ -118,21 +147,6 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
             disabled={loading}
           />
         </div>
-        <div className="login-field">
-          <span>Sign in as</span>
-          <Field icon="🏪">
-            <select
-              aria-label="Sign in as"
-              value={form.role}
-              onChange={set("role")}
-              disabled={loading}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r[0] + r.slice(1).toLowerCase()}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
         <div className="msg" role="alert">{error}</div>
         <button
           type="button"
@@ -142,7 +156,7 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
           Forgot Password?
         </button>
         <button className="btn login-submit" disabled={loading}>
-          {loading ? "Signing in..." : "Sign In"} <span aria-hidden="true">→</span>
+          {loading ? "Signing in..." : "Sign In"} <Icon name="arrow" size={18} />
         </button>
         <p className="login-signup">
           New to DashBite? <button type="button" className="or" onClick={() => onSwitch("signup")}>Create an account</button>
@@ -158,9 +172,23 @@ function Otp({ email, onBack, onVerified }) {
   const [secs, setSecs] = useState(59);
   const [error, setError] = useState("");
   const [resending, setResending] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
   const refs = useRef([]);
 
   useEffect(() => { refs.current[0]?.focus(); }, []);
+
+  // OTP auto-verify: once all six digits are entered, the system validates the code immediately.
+  useEffect(() => {
+    const code = digits.join("");
+    if (code.length !== 6) return;
+    const normalized = code.trim();
+    if (normalized !== DEMO_OTP) {
+      setError("That code is incorrect. Use demo code: 123456");
+      return;
+    }
+    setError("");
+    onVerified();
+  }, [digits, onVerified]);
   useEffect(() => {
     if (secs <= 0) return;
     const t = setTimeout(() => setSecs(secs - 1), 1000);
@@ -201,22 +229,35 @@ function Otp({ email, onBack, onVerified }) {
 
   return (
     <form className="box" onSubmit={submit} noValidate>
-      <button type="button" className="ib" onClick={onBack} aria-label="Back">←</button>
+      <button type="button" className="ib" onClick={onBack} aria-label="Back"><Icon name="arrow" size={18} /></button>
       <h2>OTP Verification</h2>
       <p>We’ve sent a 6-digit code to your account.</p>
-      <div className="otp">
-        {digits.map((d, i) => (
-          <input
-            key={i}
-            ref={(el) => (refs.current[i] = el)}
-            value={d}
-            inputMode="numeric"
-            maxLength={1}
-            aria-label={`Digit ${i + 1}`}
-            onChange={(e) => change(i, e.target.value)}
-            onKeyDown={(e) => e.key === "Backspace" && !d && refs.current[i - 1]?.focus()}
-          />
-        ))}
+      {/* OTP field group: masked inputs with a reveal toggle for password-like entry. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
+        <div className="otp">
+          {digits.map((d, i) => (
+            <input
+              key={i}
+              ref={(el) => (refs.current[i] = el)}
+              value={d}
+              type={showOtp ? "text" : "password"}
+              inputMode="numeric"
+              maxLength={1}
+              aria-label={`Digit ${i + 1}`}
+              onChange={(e) => change(i, e.target.value)}
+              onKeyDown={(e) => e.key === "Backspace" && !d && refs.current[i - 1]?.focus()}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="ib"
+          aria-label={showOtp ? "Hide OTP digits" : "Show OTP digits"}
+          onClick={() => setShowOtp((prev) => !prev)}
+          title={showOtp ? "Hide code" : "Show code"}
+        >
+          <Icon name={showOtp ? "eye-off" : "eye"} size={18} />
+        </button>
       </div>
       <div className="msg" role="alert" style={{ textAlign: "center" }}>{error}</div>
       <p>
@@ -230,7 +271,6 @@ function Otp({ email, onBack, onVerified }) {
           {resending ? "Sending..." : "Resend OTP"}
         </button>
       </p>
-      <button className="btn" style={{ justifyContent: "center" }}>Verify &amp; Continue →</button>
       <p style={{ fontSize: 12, color: "#888" }}>Demo OTP: 123456 (Throttle limit: 5 requests/minute)</p>
     </form>
   );

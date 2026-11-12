@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AuthLayout } from "../ui/components.jsx";
 import { Field, PasswordField, isEmail } from "./Forms.jsx";
 import { LOCAL_KEYS, readLocalData, writeLocalData } from "../lib/localData.js";
+import Icon from "../ui/Icon.jsx";
 
 // Validate and save a demo account in this browser's local storage.
 export default function SignupFlow({ onSwitch }) {
@@ -43,7 +44,7 @@ export default function SignupFlow({ onSwitch }) {
     return (
       <AuthLayout>
         <section className="box signup-success" aria-labelledby="signup-success-title">
-          <span className="confirmation-icon" aria-hidden="true">✓</span>
+          <span className="confirmation-icon" aria-hidden="true"><Icon name="check" size={28} /></span>
           <h2 id="signup-success-title">{f.role === "CUSTOMER" ? "Sign-up complete" : "Application submitted"}</h2>
           <p className="signup-success-message" role="status">{done}</p>
           <button type="button" className="btn" style={{ justifyContent: "center" }} onClick={() => onSwitch("signin")}>Go to Sign In →</button>
@@ -56,7 +57,7 @@ export default function SignupFlow({ onSwitch }) {
   return (
     <AuthLayout>
       <form className="box" onSubmit={submit} noValidate>
-        <button type="button" className="ib" onClick={() => onSwitch("home")} aria-label="Back">←</button>
+        <button type="button" className="ib" onClick={() => onSwitch("home")} aria-label="Back"><Icon name="arrow" size={18} /></button>
         <h2>Create Account</h2><p>Join DashBite and enjoy delicious food delivered to your door.</p>
         <Field icon="👤"><input value={f.name} onChange={set("name")} placeholder="Full Name" /></Field>
         <Field icon="✉️"><input type="email" value={f.email} onChange={set("email")} placeholder="Email Address" /></Field>

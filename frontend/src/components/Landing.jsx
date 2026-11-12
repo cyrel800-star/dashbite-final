@@ -2,12 +2,13 @@ import { Logo, Food, RestaurantCard } from "../ui/components.jsx";
 import { RESTAURANTS } from "../data/sample.js";
 import { heroBurger } from "../data/images.js";
 import { LOCAL_KEYS, readLocalData } from "../lib/localData.js";
+import Icon from "../ui/Icon.jsx";
 
 // Public landing page, navigation, feature highlights, and restaurant previews.
 export default function Landing({ onSwitch }) {
   const featureImages = readLocalData(LOCAL_KEYS.featureImages, {});
   const heroImage = featureImages.hero || heroBurger;
-  const feats = [["🛵", "Fast Delivery", "Get your food quickly", featureImages.fastDelivery], ["🛡️", "Secure Payment", "Pay safely and securely", featureImages.securePayment], ["⭐", "Top Rated Restaurants", "Only the best for you", featureImages.topRestaurants], ["🎧", "24/7 Support", "We’re here to help", featureImages.support]];
+  const feats = [["motorcycle", "Fast Delivery", "Get your food quickly", featureImages.fastDelivery], ["shield", "Secure Payment", "Pay safely and securely", featureImages.securePayment], ["star", "Top Rated Restaurants", "Only the best for you", featureImages.topRestaurants], ["headphones", "24/7 Support", "We’re here to help", featureImages.support]];
   return (
     <>
       <header className="nav" id="home">
@@ -22,7 +23,7 @@ export default function Landing({ onSwitch }) {
       </header>
       <section className="hero">
         <div>
-          <span className="pill">🍴 Fast · Fresh · Local</span>
+          <span className="pill"><Icon name="utensils" size={16} /> Fast · Fresh · Local</span>
           <h1>Your Favorite Food <span>Delivered Fast</span></h1>
           <p style={{ fontSize: 17, maxWidth: 460 }}>Order from the best local restaurants and get it delivered to your door.</p>
           <div className="row" style={{ justifyContent: "flex-start" }}>
@@ -39,7 +40,7 @@ export default function Landing({ onSwitch }) {
           <h2 id="about-title">Good Food. Faster Delivery.</h2>
           <p>DashBite brings local restaurants, delicious meals, and convenient delivery together in one place.</p>
         </div>
-        <div className="feat">{feats.map(([i, t, s, image]) => <div key={t}>{image ? <img className="feat-img" src={image} alt="" /> : <em>{i}</em>}<span><b>{t}</b><small>{s}</small></span></div>)}</div>
+        <div className="feat">{feats.map(([icon, t, s, image]) => <div key={t}>{image ? <img className="feat-img" src={image} alt="" /> : <em><Icon name={icon} size={28} /></em>}<span><b>{t}</b><small>{s}</small></span></div>)}</div>
       </section>
       {/* Restaurant previews lead visitors to sign in before ordering. */}
       <section className="sec">
