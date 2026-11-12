@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────
+# DashBite Monorepo — Root .gitignore
+# ─────────────────────────────────────────────
+
+# ── Environment / Secrets (NEVER commit these) ──
+.env
+.env.*
+!.env.example
+
+# ── PHP / Laravel ──
+backend/vendor/
+backend/bootstrap/cache/*.php
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/.phpunit.result.cache
+backend/phpunit.xml
+
+# ── Node / Vite / React ──
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── OS / Editor ──
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/
+*.suo
+*.user
+
+# ── Build Artifacts ──
+*.log
+*.cache

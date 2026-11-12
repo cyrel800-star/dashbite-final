@@ -1,0 +1,42 @@
+1. Start: restaurant accepts order
+Dispatch only begins once the restaurant has accepted. A rejected order never reaches this flow, which matches REQ-04.
+
+2. Start at ring 1 (1 km)
+The search starts at the first 1 km ring around the restaurant.
+
+3. Select eligible riders
+The system picks riders in the current ring who are approved, online, available, not already delivering, and sharing a usable current location. Ratings and attendance are not used here, so they never affect who gets the offer or in what order.
+
+4. Any eligible riders?
+
+Yes: go to the blast.
+No: skip the blast and go straight to the boundary check (step 8). I assumed this so an empty ring doesn’t stall the search.
+
+5. Blast offer to all, start ring timer
+The offer goes to every eligible rider in the ring at the same time, and a timeout timer starts. There is no ranking and no one-by-one sequence.
+
+6. Rider accepts in time?
+
+No: the timer ran out, so go to the boundary check.
+Yes: go to the claim (step 7).
+
+7. Atomic claim succeeds? (right column)
+This is the race-safe part. When a rider taps Accept, the system tries to claim the order with a single conditional write, meaning “assign only if no one has been assigned yet.” It also re-checks that the offer is still open and the rider is still eligible.
+
+Yes: this rider is the winner. One assignment is recorded and the offer is closed for everyone else.
+No: the claim was lost, for example because another rider got in a millisecond earlier. The rider sees “offer closed” and no second assignment is created.
+
+Because the claim is a single write, two riders accepting at the same millisecond still produces exactly one winner. This is the key acceptance criterion in W1.05, REQ-05 and W6.01.
+
+8. At service boundary?
+
+No: expand the ring by 1 km (the “Expand ring” box). The loop returns to “Select eligible riders” and the blast repeats with the larger ring.
+Yes: go to “No rider available” (step 9).
+
+9. No rider available
+The search stops. The customer and restaurant are shown “No rider available” and can choose to wait or cancel, as in REQ-06.
+
+Two things to keep in mind
+
+The loop is what makes it “ring by ring”. Each pass covers a wider area until a rider wins the claim or the service boundary is reached.
+Two points aren’t settled in your plan and are worth confirming with Jelvie and Cyrel. One is the location freshness threshold. The other is my assumption that an empty ring counts as a timeout.

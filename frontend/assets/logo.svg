@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">DashBite logo</title>
+  <rect width="64" height="64" rx="20" fill="#FF6B35"/>
+  <path d="M17 25h30a4 4 0 0 1 4 4v2H13v-2a4 4 0 0 1 4-4Zm-4 10h38v3a5 5 0 0 1-5 5H18a5 5 0 0 1-5-5v-3Zm6-14h26v3H19v-3Zm4 20h18v3H23v-3Z" fill="#fff"/>
+  <circle cx="23" cy="30" r="1.5" fill="#2D2D2D"/>
+  <circle cx="33" cy="30" r="1.5" fill="#2D2D2D"/>
+  <circle cx="43" cy="30" r="1.5" fill="#2D2D2D"/>
+</svg>

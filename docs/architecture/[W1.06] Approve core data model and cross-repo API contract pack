@@ -1,0 +1,48 @@
+1. Flowcharts W1.03 to W1.05 (inputs)
+The login, order lifecycle, and rider dispatch flowcharts are the starting material. They define the states, actors, and outcomes the contract has to capture. They are also listed as W1.06’s attachments, so the pack must stay consistent with them.
+
+2. Draft contract pack
+This is the main work of W1.06 (the first four subtasks). The draft includes:
+
+the entities (users, menus, orders, dispatch, payments) and which backend module owns each
+required fields for each entity
+the status vocabulary, meaning one agreed set of status names that every repo uses
+role permissions, meaning who can do what
+request and response formats, plus error outcomes for the MVP flows
+
+3. Owners agree?
+The backend owner (Jelvie) and the frontend owner (Archie) check that the draft works for the code they will write. If either disagrees, the draft goes back for revision. This matters because after W1.06, the backend and the three frontends are built in parallel in separate repos. Any mismatch caught here is cheap to fix, and one caught later is expensive.
+
+4. Cyrel approves?
+The last subtask says to review and sign off with Cyrel. This is the final gate. If he doesn’t approve, the draft goes back to be revised, the same as in step 3.
+
+5. Publish pack v1.0 in dashbite-docs
+Once approved, the pack is published with a version number in dashbite-docs. W2.03 (API reference), W2.01 and everything built in Weeks 2 to 6 depend on this, so nobody should build from an unpublished draft.
+
+Right column: after publishing
+
+The arrows from “Publish pack” feed both groups of boxes on the right, because the published contract governs both.
+
+Request handling (acceptance criterion 1)
+
+A client (any of the frontends) sends a request.
+The backend checks whether the order state is valid under the contract.
+Yes: the transition is applied.
+No: the request is rejected with a documented error, and the status stays as it was. Examples are marking “Delivered” before pickup, or acting on an order that is already closed. Because the rejection is defined in advance and nothing is written, the order can never end up with two contradictory statuses.
+
+Contract changes (acceptance criterion 2)
+
+Someone requests a change to the contract.
+The version is bumped and the change is logged.
+Affected consumers (the repos that use that part of the contract) are notified before integration starts.
+
+This prevents the situation where the backend changes a field and a frontend breaks without warning.
+
+Why the chart is built this way
+One approval path with two “No” loops: the pack can’t be published until both the technical owners and Cyrel are satisfied.
+Two outcomes after publishing: the pack is both a rule for requests and a controlled document that changes only through versioning.
+No payment detail: W1.02 is still open, so payment parts of the pack should be marked provisional.
+Things to confirm before you submit
+Who owns change notifications. The task asks you to identify this person, and your plan doesn’t name them.
+How versions are numbered. I used v1.0 as a placeholder.
+Who counts as an affected consumer. List which repos depend on which parts of the contract. This is the “identify cross-repo consumers” subtask.

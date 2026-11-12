@@ -1,0 +1,9 @@
+node_modules/
+assets/build/
+dist/
+/index.html
+npm-debug.log*
+.env
+.env.local
+.env.*.local
+

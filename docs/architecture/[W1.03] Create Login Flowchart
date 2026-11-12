@@ -1,0 +1,28 @@
+1. Open portal. Every user starts here. There are four entry points: the Customer PWA, the Restaurant portal, the Rider portal, and the Admin area. The Admin area lives inside the Restaurant portal repo.
+
+2. Enter credentials. The user types their login details and requests an OTP (one-time code) to verify themselves.
+
+3. “5 OTP requests in 1 min?” This is the rate limit. The system counts how many OTPs this user has requested in the last minute.
+
+Yes: The request is throttled and recorded so the team can review it later. The user sees a message telling them when they can safely try again, then goes back to step 2.
+No: They continue to the next check.
+
+The throttle protects against spam and abuse of the OTP system. It is the first acceptance criterion in W1.03.
+
+4. “Credentials or OTP valid?” The system checks whether what the user entered is correct.
+
+No: The user sees a generic error such as “Login failed.” It doesn’t say whether the email exists or which part was wrong, because that would leak account information. They go back to step 2.
+Yes: They continue.
+
+5. “Account status?” Being able to log in is not the same as being allowed to work. An Admin sets each account’s status, and there are three outcomes:
+
+Disabled: Sign-in is blocked completely, and the user is shown their account state.
+Pending approval: This applies to riders and restaurants that haven’t been approved yet. They can get into the portal, but anything operational (accepting orders, going online, editing menus) is denied. The screen explains that they are waiting for Admin approval. This is the second W1.03 acceptance criterion.
+Approved: They continue to the role check.
+
+6. Role check. The system looks at who the user is and shows only the features that role is allowed to use. They are then routed to one of four places:
+
+Customer: Browse restaurants, order and track.
+Restaurant: Manage the menu and orders.
+Rider: Receive offers and handle deliveries.
+Admin: The protected area for approvals, fees and the service boundary.

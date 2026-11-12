@@ -1,0 +1,135 @@
+# Order Lifecycle Flow
+
+**Project:** DBFD – DashBite Food Delivery
+**Task:** [W1.04] Create Order Lifecycle Flowchart
+**Requirement:** REQ-04 — Restaurant Order Lifecycle & External Orders; REQ-06 — Order Tracking & Delivery Status
+**Repository:** `dashbite-docs`
+**Status:** Approved
+**Date:** 11/01/2026
+
+---
+
+## Overview
+
+Every order — whether placed by a customer in the Customer PWA or entered by restaurant staff via phone, message, or walk-in — follows **one shared lifecycle**. This flow defines each state, decision point, and failure path from order intake through delivery and rating.
+
+---
+
+## 1. Order Intake
+
+An order enters the system in one of two ways:
+
+| Source | Where | Actor |
+|---|---|---|
+| Customer checkout | Customer PWA | Customer |
+| Phone, message, or walk-in order | Restaurant portal | Restaurant staff |
+
+Both paths enter the **same lifecycle**.
+
+---
+
+## 2. Validate Order
+
+The backend validates the order **before it is created**:
+
+- Items are **in stock**
+- Delivery address is **inside the service boundary**
+- Delivery address is **present** (required for staff-entered orders)
+- The same checkout was **not submitted twice** (duplicate guard)
+
+**If any check fails:**
+- The **“Show correction”** path is triggered.
+- The customer or staff member is told what to fix.
+- **No order is created** — no partial orders.
+
+---
+
+## 3. Order Placed & Restaurant Decision
+
+If validation passes:
+
+1. Order status becomes **Pending**.
+2. Order is sent to the restaurant.
+3. Restaurant chooses **Accept** or **Reject**.
+
+| Decision | Outcome |
+|---|---|
+| **Reject** | Order stops. Customer is notified. **No rider search starts.** |
+| **Accept** | Restaurant prepares the order and marks it **Ready**. Customer sees status updates. |
+
+---
+
+## 4. Rider Dispatch
+
+Once the order is **Ready**, dispatch begins:
+
+- The offer is sent **simultaneously** to every eligible rider within **1 km**.
+- **Eligible** means the rider is:
+  - Approved
+  - Online
+  - Available
+  - Not already delivering
+  - Has a fresh location
+- **Ratings and attendance do not affect eligibility or priority.**
+- **First valid acceptance wins.**
+- The offer closes for all other riders.
+
+---
+
+## 5. No Rider Accepts (Ring Timeout)
+
+If no rider accepts before the ring times out, the system checks whether it has reached the **service boundary**.
+
+| Situation | Action |
+|---|---|
+| **Not at boundary** | Add **1 km** and blast again. Loops back to “Blast current ring.” |
+| **At boundary** | Order becomes **“No rider available.”** Customer and restaurant can **Wait** (restarts search) or **Cancel** (ends the order). |
+
+---
+
+## 6. Delivery
+
+After a rider is assigned:
+
+1. Rider marks **Picked Up**.
+2. Rider marks **Delivered**.
+
+**Rule:** A rider **cannot** mark an order Delivered before Pickup. The system rejects the invalid transition and keeps the previous status (REQ-06).
+
+---
+
+## 7. Post-Delivery
+
+After delivery, the customer can rate the **restaurant** and **rider separately**.
+
+---
+
+## Status Flow Summary
+
+```text
+Order Intake
+    ↓
+Validate Order
+    ↓ (fail) → Show correction → No order created
+    ↓ (pass)
+Pending
+    ↓
+Restaurant Review
+    ├── Reject → Customer notified → No dispatch → End
+    └── Accept → Preparing → Ready
+                        ↓
+                 Blast 1 km ring
+                        ↓
+                 Rider accepts?
+                   ├── No  → At boundary?
+                   │           ├── No  → +1 km → Blast again
+                   │           └── Yes → No rider available → Wait / Cancel
+                   └── Yes → Rider assigned
+                                 ↓
+                             Picked up
+                                 ↓
+                             Delivered
+                                 ↓
+                           Ratings open
+                                 ↓
+                                End
