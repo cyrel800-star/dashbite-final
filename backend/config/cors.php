@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => ['https://dashbite.pro', 'https://www.dashbite.pro', 'https://api.dashbite.pro'],
 
     'allowed_origins_patterns' => [],
 
