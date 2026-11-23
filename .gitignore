@@ -12,7 +12,7 @@ backend/.phpunit.result.cache
 backend/phpunit.xml
 
 # ── Node / Vite / React ──
-frontend/dist/
+
 frontend/.vite/
 
 # ── OS / Editor ──
