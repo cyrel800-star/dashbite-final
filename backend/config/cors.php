@@ -11,15 +11,19 @@ return [
     | or "CORS". This determines what cross-origin operations may execute
     | in web browsers. You are free to adjust these settings as needed.
     |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-    |
     */
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://dashbite.pro', 'https://www.dashbite.pro', 'https://api.dashbite.pro'],
+    'allowed_origins' => [
+        'https://dashbite.pro',
+        'https://www.dashbite.pro',
+        'https://api.dashbite.pro',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -29,6 +33,7 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    // CRITICAL: This must be true for Sanctum cookies/tokens to work
+    'supports_credentials' => true,
 
 ];
