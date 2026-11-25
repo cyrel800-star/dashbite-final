@@ -123,6 +123,9 @@ export const api = Object.freeze({
   getOrder(id) {
     return request(`/orders/${id}`);
   },
+  cancelOrder(id) {
+    return request(`/orders/${id}/cancel`, { method: "POST" });
+  },
   rateOrder(id, payload) {
     return request(`/orders/${id}/rate`, { method: "POST", body: payload });
   },

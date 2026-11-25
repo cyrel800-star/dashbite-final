@@ -55,9 +55,14 @@ class CheckoutService
         $deliveryFee = app(SettingService::class)->getDeliveryFee();
         $total = round($subtotal + $deliveryFee, 2);
 
-        // Atomic: create order + items
+                // Atomic: create order + items
         return DB::transaction(function () use ($customer, $restaurant, $payload, $idempotencyKey, $itemsData, $subtotal, $deliveryFee, $total) {
+            
+            // Generate a unique Order Number (e.g., ORD-8F3A2B1C)
+            $orderNumber = 'ORD-' . strtoupper(\Illuminate\Support\Str::random(8));
+
             $order = Order::create([
+                'order_number'            => $orderNumber,
                 'idempotency_key'         => $idempotencyKey,
                 'frozen_delivery_fee'     => $deliveryFee,
                 'frozen_service_boundary' => $restaurant->service_boundary,

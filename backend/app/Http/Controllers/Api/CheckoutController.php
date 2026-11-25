@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Services\CheckoutService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -36,6 +37,8 @@ class CheckoutController extends Controller
                     'items'            => $order->items,
                     'placed_at'        => $order->placed_at?->toIso8601String(),
                     'delivered_at'     => $order->delivered_at?->toIso8601String(),
+                    'accepted_at'      => $order->accepted_at?->toIso8601String(),
+                    'can_cancel'       => $order->can_cancel, // <-- Added for frontend logic
                 ];
             });
 
@@ -120,6 +123,41 @@ class CheckoutController extends Controller
             'order_id' => $order->id,
             'status'   => $order->status->toContract(),
             'data'     => $order,
+        ]);
+    }
+
+    public function cancel(Request $request, int $id)
+    {
+        $order = Order::where('customer_id', $request->user()->id)->findOrFail($id);
+
+        // Use the computed attribute from the Order model
+        if (!$order->can_cancel) {
+            return response()->json([
+                'error' => 'CANCEL_WINDOW_EXPIRED',
+                'message' => 'The cancellation window has passed and the order is not delayed.'
+            ], 403);
+        }
+
+        // Perform the cancellation
+        $order = app(\App\Services\OrderLifecycleService::class)->transition(
+            $order, 
+            \App\Enums\OrderStatus::Cancelled, 
+            $request->user(), 
+            'Cancelled by customer'
+        );
+
+        // Clean up dispatch offers
+        \App\Models\DispatchAttempt::where('order_id', $order->id)
+            ->where('status', 'broadcasting')
+            ->update(['status' => 'expired', 'ended_at' => now()]);
+            
+        \App\Models\DispatchOffer::where('order_id', $order->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'expired', 'responded_at' => now()]);
+
+        return response()->json([
+            'message' => 'Order cancelled successfully.',
+            'data' => $order
         ]);
     }
 }

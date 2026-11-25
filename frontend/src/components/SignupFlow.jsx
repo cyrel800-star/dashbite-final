@@ -56,13 +56,13 @@ export default function SignupFlow({ onSwitch }) {
   // Collect the account details and show the result of registration.
   return (
     <AuthLayout onSwitch={onSwitch}>
-      <form className="box" onSubmit={submit} noValidate>
+            <form className="box" onSubmit={submit} noValidate autoComplete="off">
         <button type="button" className="ib" onClick={() => onSwitch("home")} aria-label="Back"><Icon name="arrow" size={18} /></button>
         <h2>Create Account</h2><p>Join DashBite and enjoy delicious food delivered to your door.</p>
         <Field icon="👤"><input value={f.name} onChange={set("name")} placeholder="Full Name" /></Field>
         <Field icon="✉️"><input type="email" value={f.email} onChange={set("email")} placeholder="Email Address" /></Field>
         <Field icon="📞"><input value={f.phone} onChange={set("phone")} placeholder="Phone Number" /></Field>
-        <PasswordField value={f.password} onChange={set("password")} placeholder="Password (min. 8 characters)" />
+                <PasswordField value={f.password} onChange={set("password")} placeholder="Password (min. 8 characters)" autoComplete="new-password" />
         <Field icon="🏪"><select value={f.role} onChange={set("role")}><option value="">Select Role</option><option value="CUSTOMER">Customer</option><option value="RESTAURANT">Restaurant</option><option value="RIDER">Rider</option></select></Field>
         <small style={{ color: "var(--mu)", textAlign: "right" }}>Restaurant owners will need to provide restaurant details.</small>
         <div className={`msg ${done ? "ok" : ""}`} role="alert">{done || error}</div>

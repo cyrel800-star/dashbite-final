@@ -83,13 +83,16 @@ function OrderTimeline({ order }) {
   );
 }
 
-function CustomerOrderCard({ order, showTimeline = false }) {
+function CustomerOrderCard({ order, showTimeline = false, onCancel }) {
   const createdAt = Date.parse(order.placed_at || order.createdAt || order.created_at);
   const status = normalizeOrderStatus(order.status);
   const restaurantName = typeof order.restaurant === "string"
     ? order.restaurant
     : order.restaurant?.name || "Restaurant";
   const items = Array.isArray(order.items) ? order.items : [];
+  
+  // Relying on the backend calculation
+  const cancellable = order.can_cancel === true;
 
   return (
     <article className="customer-order-card">
@@ -114,6 +117,21 @@ function CustomerOrderCard({ order, showTimeline = false }) {
         <span>Total</span>
         <b>₱{Number(order.total || order.total_amount || 0).toFixed(2)}</b>
       </div>
+      
+      {/* CANCEL BUTTON */}
+      {onCancel && cancellable && (
+        <div style={{ marginTop: "12px", textAlign: "right" }}>
+          <button 
+            type="button" 
+            className="btn gh sm" 
+            style={{ color: "#e53e3e", borderColor: "#e53e3e" }}
+            onClick={() => onCancel(order.id || order.order_id)}
+          >
+            Cancel Order
+          </button>
+        </div>
+      )}
+
       {showTimeline && <OrderTimeline order={order} />}
       {!showTimeline && (
         <small className="order-history-note">
@@ -189,7 +207,6 @@ export default function CustomerPortal(props) {
   };
 
   const loadOrders = async () => {
-    // If guest, skip loading orders
     if (props.isGuest) return;
     
     setLoadingOrders(true);
@@ -250,6 +267,17 @@ export default function CustomerPortal(props) {
       return { ...current, [item.id]: nextQuantity };
     });
     setCheckoutError("");
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    try {
+      await api.cancelOrder(orderId);
+      toast("Order cancelled.");
+      loadOrders();
+    } catch (err) {
+      toast(`Could not cancel: ${formatError(err)}`);
+    }
   };
 
   const submitCheckout = async (event) => {
@@ -736,7 +764,7 @@ export default function CustomerPortal(props) {
               <h3>Recent Orders</h3>
               {currentOrders.length ? (
                 [...currentOrders].reverse().slice(0, 3).map((order) => (
-                  <CustomerOrderCard key={order.id || order.order_id} order={order} />
+                  <CustomerOrderCard key={order.id || order.order_id} order={order} onCancel={handleCancelOrder} />
                 ))
               ) : (
                 <Empty icon="🛍️">You have no active orders. Placed orders will appear here.</Empty>
@@ -747,7 +775,7 @@ export default function CustomerPortal(props) {
               <h3>Active Order Tracking</h3>
               {currentOrders.length ? (
                 <>
-                  <CustomerOrderCard order={currentOrders[0]} showTimeline />
+                  <CustomerOrderCard order={currentOrders[0]} showTimeline onCancel={handleCancelOrder} />
                   <button
                     className="btn ol sm"
                     style={{ marginTop: 12 }}
@@ -785,7 +813,6 @@ export default function CustomerPortal(props) {
       );
     },
 
-    // UPDATED BROWSE SCREEN WITH CATEGORIES
     browse: ({ q }) => {
       const list = findRestaurants(q);
       return selectedRestaurant ? (
@@ -882,6 +909,7 @@ export default function CustomerPortal(props) {
                     key={order.id || order.order_id}
                     order={order}
                     showTimeline={ordersTab === "current"}
+                    onCancel={handleCancelOrder}
                   />
                 ))}
             </div>

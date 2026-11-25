@@ -19,10 +19,10 @@ use Illuminate\Support\Facades\Route;
 // AUTH (public)
 // ============================================
 Route::prefix('auth')->group(function () {
-    Route::post('register', [LoginController::class, 'register']); // <-- From the signup step
+    Route::post('register', [LoginController::class, 'register']);
     Route::post('login', [LoginController::class, 'login'])->middleware('throttle:login')->name('login');
     Route::post('otp/request', [OtpController::class, 'request'])->middleware('throttle:otp');
-    Route::post('otp/verify', [OtpController::class, 'verify'])->middleware('throttle:otp'); // <-- New OTP login route
+    Route::post('otp/verify', [OtpController::class, 'verify'])->middleware('throttle:otp');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [LoginController::class, 'logout']);
@@ -48,6 +48,9 @@ Route::middleware(['auth:sanctum', 'role:customer', 'approved'])->group(function
     Route::get('orders', [CheckoutController::class, 'index']);
     Route::get('orders/{id}', [CheckoutController::class, 'show']);
     Route::post('orders/{id}/rate', [RatingController::class, 'store']);
+    
+    // ADDED CANCEL ROUTE HERE:
+    Route::post('orders/{id}/cancel', [CheckoutController::class, 'cancel']);
 });
 
 Route::middleware(['auth:sanctum', 'role:rider', 'approved'])->prefix('dispatch')->group(function () {
@@ -65,6 +68,7 @@ Route::middleware(['auth:sanctum', 'role:customer', 'approved'])->prefix('checko
     Route::get('orders/{id}', [CheckoutController::class, 'show']);
     Route::post('orders/{id}/rate', [RatingController::class, 'store']);
     Route::post('complaints', [ComplaintController::class, 'store']);
+    Route::post('orders/{id}/cancel', [CheckoutController::class, 'cancel']);
 });
 
 // ============================================
