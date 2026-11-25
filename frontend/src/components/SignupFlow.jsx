@@ -1,48 +1,47 @@
 import { useState } from "react";
 import { AuthLayout } from "../ui/components.jsx";
 import { Field, PasswordField, isEmail } from "./Forms.jsx";
-import { LOCAL_KEYS, readLocalData, writeLocalData } from "../lib/localData.js";
+import { api, formatError } from "../lib/api.js";
 import Icon from "../ui/Icon.jsx";
 
-// Validate and save a demo account in this browser's local storage.
+// Validate and save a real account in the database.
 export default function SignupFlow({ onSwitch }) {
   const [f, setF] = useState({ name: "", email: "", phone: "", password: "", role: "" });
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
+    setError("");
+    setDone("");
+    
     if (!f.name.trim()) return setError("Enter your full name.");
     if (!isEmail(f.email)) return setError("Enter a valid email address.");
     if (!/^[+\d\s-]{7,}$/.test(f.phone)) return setError("Enter a valid phone number.");
     if (f.password.length < 8) return setError("Password needs at least 8 characters.");
     if (!f.role) return setError("Select a role.");
-    const accounts = readLocalData(LOCAL_KEYS.accounts, []);
-    if (accounts.some((account) => account.email.toLowerCase() === f.email.trim().toLowerCase())) {
-      return setError("An account with this email already exists on this device.");
-    }
-    const account = {
-      name: f.name.trim(),
-      email: f.email.trim(),
-      phone: f.phone.trim(),
-      role: f.role,
-      status: f.role === "CUSTOMER" ? "APPROVED" : "PENDING_APPROVAL",
-      createdAt: new Date().toISOString(),
-    };
+
     try {
-      writeLocalData(LOCAL_KEYS.accounts, [...accounts, account]);
-      setError("");
+      await api.register({
+        name: f.name.trim(),
+        email: f.email.trim(),
+        phone: f.phone.trim(),
+        password: f.password,
+        role: f.role, // Sends "CUSTOMER", "RIDER", or "RESTAURANT"
+      });
+      
       setDone(f.role === "CUSTOMER"
         ? "Your account is ready. You can sign in now."
-        : `Your ${f.role === "RIDER" ? "rider" : "restaurant"} account was submitted for admin approval. We’ll notify you when an admin approves it. Notifications aren’t active in this demo, so please check back and sign in after approval.`);
-    } catch (saveError) {
-      setError("Could not save your account in this browser. Free storage space and try again.");
+        : `Your ${f.role === "RIDER" ? "rider" : "restaurant"} account was submitted for admin approval.`);
+    } catch (err) {
+      setError(formatError(err));
     }
   };
+
   if (done) {
     return (
-      <AuthLayout>
+      <AuthLayout onSwitch={onSwitch}>
         <section className="box signup-success" aria-labelledby="signup-success-title">
           <span className="confirmation-icon" aria-hidden="true"><Icon name="check" size={28} /></span>
           <h2 id="signup-success-title">{f.role === "CUSTOMER" ? "Sign-up complete" : "Application submitted"}</h2>
@@ -53,9 +52,10 @@ export default function SignupFlow({ onSwitch }) {
       </AuthLayout>
     );
   }
-  // Collect the account details and show the result of local registration.
+  
+  // Collect the account details and show the result of registration.
   return (
-    <AuthLayout>
+    <AuthLayout onSwitch={onSwitch}>
       <form className="box" onSubmit={submit} noValidate>
         <button type="button" className="ib" onClick={() => onSwitch("home")} aria-label="Back"><Icon name="arrow" size={18} /></button>
         <h2>Create Account</h2><p>Join DashBite and enjoy delicious food delivered to your door.</p>

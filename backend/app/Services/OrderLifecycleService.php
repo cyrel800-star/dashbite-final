@@ -19,7 +19,16 @@ class OrderLifecycleService
         OrderStatus::Accepted->value       => [OrderStatus::Preparing->value, OrderStatus::Ready->value, OrderStatus::SearchingRider->value, OrderStatus::Cancelled->value],
         OrderStatus::Preparing->value      => [OrderStatus::Ready->value, OrderStatus::SearchingRider->value, OrderStatus::Cancelled->value],
         OrderStatus::Ready->value          => [OrderStatus::SearchingRider->value, OrderStatus::PickedUp->value, OrderStatus::Cancelled->value],
-        OrderStatus::SearchingRider->value => [OrderStatus::Accepted->value, OrderStatus::PickedUp->value, OrderStatus::NoRider->value, OrderStatus::Cancelled->value],
+
+        // NEW: Allow the restaurant to move to Preparing/Ready even if the order is currently searching for a rider
+        OrderStatus::SearchingRider->value => [
+            OrderStatus::Preparing->value,
+            OrderStatus::Ready->value,
+            OrderStatus::PickedUp->value,
+            OrderStatus::NoRider->value,
+            OrderStatus::Cancelled->value
+        ],
+
         OrderStatus::PickedUp->value       => [OrderStatus::Delivered->value],
         OrderStatus::Rejected->value       => [],
         OrderStatus::Delivered->value      => [],

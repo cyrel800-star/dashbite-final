@@ -7,8 +7,8 @@ import { api, formatError } from "../../lib/api.js";
 import Icon from "../../ui/Icon.jsx";
 
 export default function RiderPortal(props) {
-  const [online, setOnline] = useState(true);
-  const [available, setAvailable] = useState(true);
+    const [online, setOnline] = useState(false);
+  const [available, setAvailable] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [locationStatus, setLocationStatus] = useState("Location active (14.5995, 120.9842)");
 
@@ -104,6 +104,7 @@ export default function RiderPortal(props) {
   }, [online, approved]);
 
   // Online / Offline toggle with backend
+    // Online / Offline toggle with backend
   const toggleOnline = async () => {
     setActionError("");
     if (!approved) {
@@ -120,20 +121,17 @@ export default function RiderPortal(props) {
       });
 
       if (nextState) {
-        // Send fresh coordinates (~Manila downtown)
-        await api.updateRiderLocation({
-          lat: 14.5995,
-          lng: 120.9842,
-        });
+        // Send fresh coordinates immediately so they are eligible for the blast
+        await api.updateRiderLocation({ lat: 14.5995, lng: 120.9842 });
         setLocationStatus("GPS coordinates updated: (14.5995, 120.9842)");
-        toast("You are online and eligible for 1 km dispatch blast offers.");
+        toast("You are online and eligible for dispatch offers.");
       } else {
         toast("You are offline. Location updates paused.");
       }
 
       setOnline(nextState);
       setAvailable(nextState);
-      loadOffers();
+      loadOffers(); // Refresh offers immediately
     } catch (err) {
       setActionError(formatError(err));
     } finally {

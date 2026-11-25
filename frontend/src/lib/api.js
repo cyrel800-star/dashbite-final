@@ -83,11 +83,17 @@ export async function request(path, { method = "GET", body } = {}) {
 
 export const api = Object.freeze({
   // Auth
+  register(payload) {
+    return request("/auth/register", { method: "POST", body: payload });
+  },
   login(credentials) {
     return request("/auth/login", { method: "POST", body: credentials });
   },
   requestOtp(payload) {
     return request("/auth/otp/request", { method: "POST", body: payload });
+  },
+  verifyOtp(payload) {
+    return request("/auth/otp/verify", { method: "POST", body: payload });
   },
   logout() {
     return request("/auth/logout", { method: "POST" });

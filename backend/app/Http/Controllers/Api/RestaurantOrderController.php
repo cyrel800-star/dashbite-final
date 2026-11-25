@@ -69,7 +69,11 @@ class RestaurantOrderController extends Controller
         $order = $this->findOwnOrder($request, $id);
         $order = $this->lifecycle->accept($order, $request->user(), $data['prep_minutes'] ?? null);
 
-        return response()->json(['message' => 'Order accepted.', 'data' => $order]);
+        // NEW: Auto-start dispatch blast as soon as the restaurant accepts
+        app(\App\Services\DispatchService::class)->start($order);
+        $order->refresh();
+
+        return response()->json(['message' => 'Order accepted and rider dispatch started.', 'data' => $order]);
     }
 
     public function reject(Request $request, int $id)
@@ -97,12 +101,10 @@ class RestaurantOrderController extends Controller
         $order = $this->findOwnOrder($request, $id);
         $order = $this->lifecycle->markReady($order, $request->user());
 
-        // Auto-start dispatch blast to eligible riders in 1 km ring
-        app(\App\Services\DispatchService::class)->start($order);
-        $order->refresh();
+        // REMOVED: The dispatch trigger is no longer here.
 
         return response()->json([
-            'message' => 'Order marked as ready and rider dispatch started.',
+            'message' => 'Order marked as ready.',
             'data'    => $order,
         ]);
     }

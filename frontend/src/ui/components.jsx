@@ -20,8 +20,13 @@ export function Toaster() {
 }
 
 // Shared logo, food image, tag, and empty-state primitives.
-export const Logo = ({ dark, className = "", style, ...props }) => (
-  <div className={`logo ${dark ? "dark" : ""} ${className}`.trim()} style={style} {...props}>
+export const Logo = ({ dark, className = "", style, onClick, ...props }) => (
+  <div 
+    className={`logo ${dark ? "dark" : ""} ${className}`.trim()} 
+    style={{ cursor: onClick ? "pointer" : "default", ...style }} 
+    onClick={onClick} 
+    {...props}
+  >
     <img
       src={dark ? logoWhiteUrl : logoUrl}
       alt="DashBite"
@@ -74,56 +79,100 @@ export function RestaurantCard({ r, fav, onFav, onViewMenu = () => toast("Sign i
 }
 
 // Portal navigation, top bar, and responsive shell.
-export function Sidebar({ nav, view, setView, open, onLogout }) {
+export function Sidebar({ nav, view, setView, open, onLogout, isGuest, onSwitch }) {
   return (
     <aside className={`side ${open ? "open" : ""}`}>
-      <Logo dark />
+      <div 
+        onClick={() => {
+          if (isGuest && onSwitch) onSwitch("home");
+          else if (onLogout) onLogout();
+        }}
+      >
+        <Logo dark style={{ cursor: "pointer", marginBottom: 20 }} />
+      </div>
+      
       {nav.map(([key, icon, label, badge]) => (
         <button key={key} className={key === view ? "on" : ""} onClick={() => setView(key)}>
           <Icon name={icon} size={19} />{label}{badge && <span className="badge">{badge}</span>}
         </button>
       ))}
-      <span className="sp" />
-      <button onClick={onLogout}><Icon name="logout" size={19} />Log Out</button>
+      
+      {isGuest ? (
+        <>
+          <div style={{ padding: "16px", background: "rgba(255, 107, 0, 0.08)", border: "1px solid rgba(255, 107, 0, 0.2)", borderRadius: "12px", marginTop: "20px" }}>
+            <p style={{ fontSize: "13px", color: "#fff", fontWeight: "bold", marginBottom: "8px" }}>Want to place an order?</p>
+            <p style={{ fontSize: "12px", color: "var(--mu)", marginBottom: "12px", lineHeight: "1.4" }}>Create an account or sign in to track deliveries and save your favorites.</p>
+            <button className="btn sm" style={{ width: "100%", justifyContent: "center" }} onClick={() => onSwitch("signup")}>Create Account</button>
+          </div>
+          
+          <span className="sp" />
+          <button onClick={() => onSwitch("signin")} className="btn ol" style={{ width: "100%", justifyContent: "center", border: "1px solid var(--orange)", color: "var(--orange)" }}>
+            <Icon name="user" size={19} />Sign In
+          </button>
+        </>
+      ) : (
+        <>
+          <span className="sp" />
+          <button onClick={onLogout}><Icon name="logout" size={19} />Log Out</button>
+        </>
+      )}
+      
       <div className="ad">Good Food<br /><span className="or">Faster Delivery</span></div>
     </aside>
   );
 }
 
 // Search, notifications, and account controls above every portal screen.
-export function TopBar({ placeholder, q, setQ, user, img, role, onMenu, onProfile }) {
+export function TopBar({ placeholder, q, setQ, user, img, role, onMenu, onProfile, isGuest }) {
   return (
     <div className="top">
       <button className="ib menu-btn" onClick={onMenu} aria-label="Menu"><Icon name="menu" /></button>
       <label className="fld"><Icon name="search" size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} /></label>
-      <button className="ib" onClick={() => toast("3 new notifications (sample data)")} aria-label="Notifications"><Icon name="bell" /><span className="badge">3</span></button>
-      <button className="me" onClick={onProfile}>
-        <span className="av">{img ? <img src={img} alt="" /> : user.name[0]}</span>
-        <span><b>Hi, {user.name.split(" ")[0]}!</b><small style={{ display: "block", color: "var(--mu)" }}>{ROLE_LABELS[role]}</small></span>
-      </button>
+      
+      {!isGuest && (
+        <button className="ib" onClick={() => toast("3 new notifications (sample data)")} aria-label="Notifications">
+          <Icon name="bell" /><span className="badge">3</span>
+        </button>
+      )}
+      
+      {isGuest ? (
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px", background: "rgba(255, 107, 0, 0.1)", padding: "8px 16px", borderRadius: "20px", border: "1px solid var(--orange)" }}>
+          <Icon name="user" size={16} color="var(--orange)" />
+          <span style={{ fontSize: "14px", color: "var(--orange)", fontWeight: "700" }}>Browsing as Guest</span>
+        </div>
+      ) : (
+        <button className="me" onClick={onProfile}>
+          <span className="av">{img ? <img src={img} alt="" /> : user.name[0]}</span>
+          <span><b>Hi, {user.name.split(" ")[0]}!</b><small style={{ display: "block", color: "var(--mu)" }}>{ROLE_LABELS[role]}</small></span>
+        </button>
+      )}
     </div>
   );
 }
 
 // Responsive application shell that coordinates sidebar and active content.
-export function PortalShell({ role, nav, view, setView, user, img, placeholder, q, setQ, onLogout, children }) {
+export function PortalShell({ role, nav, view, setView, user, img, placeholder, q, setQ, onLogout, children, isGuest, onSwitch }) {
   const [open, setOpen] = useState(false);
   const go = (v) => { setView(v); setOpen(false); };
+  
   const mobileKeys = {
     CUSTOMER: [["dash", "home", "Home"], ["browse", "store", "Browse"], ["orders", "receipt", "Orders"], ["profile", "user", "Profile"]],
     RESTAURANT: [["dash", "home", "Home"], ["orders", "receipt", "Orders"], ["menu", "utensils", "Menu"], ["profile", "user", "Profile"]],
     RIDER: [["dash", "home", "Home"], ["offers", "motorcycle", "Offers"], ["deliveries", "package", "Deliveries"], ["earnings", "wallet", "Earnings"]],
     ADMIN: [["dash", "home", "Home"], ["users", "users", "Users"], ["payments", "card", "Payments"], ["orders", "receipt", "Orders"]],
   };
-  const mobileNav = mobileKeys[role] || mobileKeys.CUSTOMER;
+  
+  const mobileNav = isGuest 
+    ? [["browse", "store", "Browse"]] 
+    : (mobileKeys[role] || mobileKeys.CUSTOMER);
+    
   return (
     <div className="shell">
-      <Sidebar nav={nav} view={view} setView={go} open={open} onLogout={onLogout} />
+      <Sidebar nav={nav} view={view} setView={go} open={open} onLogout={onLogout} isGuest={isGuest} onSwitch={onSwitch} />
       <main className="main">
-        <TopBar placeholder={placeholder} q={q} setQ={setQ} user={user} img={img} role={role} onMenu={() => setOpen(!open)} onProfile={() => go("profile")} />
+        <TopBar placeholder={placeholder} q={q} setQ={setQ} user={user} img={img} role={role} onMenu={() => setOpen(!open)} onProfile={() => go("profile")} isGuest={isGuest} />
         {children}
       </main>
-      {/* Four primary destinations stay reachable in a fixed, touch-friendly mobile tab bar. */}
       <nav className="mobile-tabs" aria-label="Main navigation">
         {mobileNav.map(([key, icon, label]) => (
           <button key={key} className={key === view ? "on" : ""} onClick={() => go(key)} aria-current={key === view ? "page" : undefined}>
@@ -137,11 +186,16 @@ export function PortalShell({ role, nav, view, setView, user, img, placeholder, 
 }
 
 // Shared split layout for sign-in and account creation pages.
-export function AuthLayout({ children }) {
+export function AuthLayout({ children, onSwitch }) {
   return (
     <div className="auth">
       <div className="l">
-        <Logo dark />
+        <div 
+          onClick={() => onSwitch && onSwitch("home")} 
+          style={{ cursor: "pointer", display: "inline-block", marginBottom: 20 }}
+        >
+          <Logo dark />
+        </div>
         <h1 style={{ color: "#fff" }}>Your Favorite Food <span>Delivered Fast</span></h1>
         <p>Good Food. Faster Delivery.</p>
         <span className="tag"><Icon name="motorcycle" size={16} /> Fast Delivery</span><span className="tag"><Icon name="shield" size={16} /> Secure Payment</span><span className="tag"><Icon name="headphones" size={16} /> 24/7 Support</span>

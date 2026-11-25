@@ -19,8 +19,10 @@ use Illuminate\Support\Facades\Route;
 // AUTH (public)
 // ============================================
 Route::prefix('auth')->group(function () {
+    Route::post('register', [LoginController::class, 'register']); // <-- From the signup step
     Route::post('login', [LoginController::class, 'login'])->middleware('throttle:login')->name('login');
     Route::post('otp/request', [OtpController::class, 'request'])->middleware('throttle:otp');
+    Route::post('otp/verify', [OtpController::class, 'verify'])->middleware('throttle:otp'); // <-- New OTP login route
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [LoginController::class, 'logout']);

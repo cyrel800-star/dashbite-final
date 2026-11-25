@@ -56,9 +56,10 @@ export default function App() {
   const Portal = session && PORTALS[session.role];
   return (
     <>
-      {Portal ? <Portal user={user} setUser={setUser} img={img} setImg={setImg} onLogout={logout} session={session} />
+            {Portal ? <Portal user={user} setUser={setUser} img={img} setImg={setImg} onLogout={logout} session={session} />
         : screen === "signin" ? <LoginFlow onSignedIn={signIn} onSwitch={setScreen} />
         : screen === "signup" ? <SignupFlow onSwitch={setScreen} />
+        : screen === "guest" ? <CustomerPortal isGuest={true} user={{ name: "Guest User", email: "" }} onSwitch={setScreen} onLogout={() => setScreen("home")} />
         : <Landing onSwitch={setScreen} />}
       <Toaster />
     </>

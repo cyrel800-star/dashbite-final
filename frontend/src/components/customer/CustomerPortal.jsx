@@ -189,6 +189,9 @@ export default function CustomerPortal(props) {
   };
 
   const loadOrders = async () => {
+    // If guest, skip loading orders
+    if (props.isGuest) return;
+    
     setLoadingOrders(true);
     setOrdersError("");
     try {
@@ -232,6 +235,11 @@ export default function CustomerPortal(props) {
   };
 
   const toggleFav = (name) => {
+    if (props.isGuest) {
+      toast("Please sign in to save favorites.");
+      if (props.onSwitch) props.onSwitch("signin");
+      return;
+    }
     setFavs((saved) => (saved.includes(name) ? saved.filter((item) => item !== name) : [...saved, name]));
   };
 
@@ -269,8 +277,6 @@ export default function CustomerPortal(props) {
         quantity: Number(quantity),
       }));
 
-      // Coordinates: if simulating out of boundary, send 15.5, 121.5 (outside the 14.55-14.65 box)
-      // Otherwise send default town coordinates 14.5995, 120.9842
       const payload = {
         restaurant_id: selectedRestaurant.id,
         items: itemsPayload,
@@ -282,7 +288,6 @@ export default function CustomerPortal(props) {
 
       const res = await api.createOrder(payload);
 
-      // Order created successfully
       setCart({});
       setCheckoutOpen(false);
       setSimulateOutOfBounds(false);
@@ -660,6 +665,12 @@ export default function CustomerPortal(props) {
             <button
               className="btn"
               onClick={() => {
+                // INTERCEPT GUEST CHECKOUT HERE
+                if (props.isGuest) {
+                  toast("Please sign in to place an order.");
+                  if (props.onSwitch) props.onSwitch("signin");
+                  return;
+                }
                 setCheckoutOpen(true);
                 setCheckoutError("");
               }}
@@ -774,16 +785,39 @@ export default function CustomerPortal(props) {
       );
     },
 
+    // UPDATED BROWSE SCREEN WITH CATEGORIES
     browse: ({ q }) => {
       const list = findRestaurants(q);
       return selectedRestaurant ? (
         menuView(selectedRestaurant)
       ) : loadingRestaurants ? (
         <Empty icon="⏳">Loading restaurants...</Empty>
-      ) : list.length ? (
-        cards(list, openRestaurant)
       ) : (
-        <Empty icon="🔎">No restaurants match your search.</Empty>
+        <div className="col">
+          <div>
+            <h3>Food Categories</h3>
+            <div className="cats">
+              {CATEGORIES.map(([c, icon]) => (
+                <button
+                  key={c}
+                  className={`cat ${cat === c ? "on" : ""}`}
+                  onClick={() => setCat(c)}
+                >
+                  <em><Icon name={icon} size={21} /></em>{c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <h3>Approved Local Restaurants</h3>
+            {list.length ? (
+              cards(list, openRestaurant)
+            ) : (
+              <Empty icon="🔎">No restaurants match your search.</Empty>
+            )}
+          </div>
+        </div>
       );
     },
 

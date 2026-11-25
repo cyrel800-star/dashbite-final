@@ -14,6 +14,60 @@ class LoginController extends Controller
      * Endpoint 1: User Login
      * POST /api/auth/login
      */
+
+    /**
+     * Register a new account.
+     * POST /api/auth/register
+     */
+        public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'nullable|string|max:20',
+            'password' => 'required|string|min:8',
+            'role' => 'required|string',
+        ]);
+
+        // Strictly map the role
+        $roleValue = strtolower(trim($validated['role']));
+        
+        if ($roleValue === 'rider') {
+            $roleEnum = \App\Enums\UserRole::Rider;
+            $status = \App\Enums\AccountStatus::Pending;
+        } elseif ($roleValue === 'restaurant') {
+            $roleEnum = \App\Enums\UserRole::Restaurant;
+            $status = \App\Enums\AccountStatus::Pending;
+        } elseif ($roleValue === 'customer') {
+            $roleEnum = \App\Enums\UserRole::Customer;
+            $status = \App\Enums\AccountStatus::Approved;
+        } else {
+            return response()->json([
+                'error' => 'INVALID_ROLE',
+                'message' => 'Invalid role selected.',
+            ], 422);
+        }
+
+        $user = \App\Models\User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'password' => $validated['password'],
+            'role' => $roleEnum,
+            'account_status' => $status,
+        ]);
+
+        return response()->json([
+            'message' => 'Account created successfully.',
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role->toContract(),
+                'account_status' => $user->account_status->toContract(),
+            ]
+        ], 201);
+    }
+    
     public function login(Request $request)
     {
         $email = $request->input('email');
