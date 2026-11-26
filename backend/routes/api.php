@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\ComplaintController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RestaurantMenuController;
 use App\Http\Controllers\Api\RestaurantOrderController;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('register', [LoginController::class, 'register']);
     Route::post('login', [LoginController::class, 'login'])->middleware('throttle:login')->name('login');
+    Route::post('forgot-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'sendResetLink']);
+    Route::post('reset-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'reset']);
     Route::post('otp/request', [OtpController::class, 'request'])->middleware('throttle:otp');
     Route::post('otp/verify', [OtpController::class, 'verify'])->middleware('throttle:otp');
 
@@ -28,6 +31,12 @@ Route::prefix('auth')->group(function () {
         Route::post('logout', [LoginController::class, 'logout']);
         Route::get('me', [LoginController::class, 'me']);
     });
+});
+
+Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::patch('{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('read-all', [NotificationController::class, 'markAllAsRead']);
 });
 
 // ============================================

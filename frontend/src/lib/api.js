@@ -89,6 +89,12 @@ export const api = Object.freeze({
   login(credentials) {
     return request("/auth/login", { method: "POST", body: credentials });
   },
+  forgotPassword(payload) {
+    return request("/auth/forgot-password", { method: "POST", body: payload });
+  },
+  resetPassword(payload) {
+    return request("/auth/reset-password", { method: "POST", body: payload });
+  },
   requestOtp(payload) {
     return request("/auth/otp/request", { method: "POST", body: payload });
   },
@@ -101,6 +107,16 @@ export const api = Object.freeze({
   me() {
     return request("/auth/me");
   },
+    getNotifications() {
+    return request("/notifications");
+  },
+  markNotificationRead(id) {
+    return request(`/notifications/${id}/read`, { method: "PATCH" });
+  },
+  markAllNotificationsRead() {
+    return request("/notifications/read-all", { method: "POST" });
+  },
+
 
   // Catalog
   getRestaurants() {

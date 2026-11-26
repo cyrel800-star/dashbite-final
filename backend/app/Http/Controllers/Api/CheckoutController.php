@@ -78,6 +78,11 @@ class CheckoutController extends Controller
 
         try {
             $order = $this->checkoutService->checkout($request->user(), $data);
+            // Notify the restaurant about the new order
+            $restaurantUser = \App\Models\User::where('restaurant_id', $order->restaurant_id)->first();
+            if ($restaurantUser) {
+                $restaurantUser->notify(new \App\Notifications\OrderStatusUpdated($order, 'New Order Placed'));
+            }
         } catch (ValidationException $e) {
             $firstMessage = collect($e->errors())->flatten()->first() ?: 'Order could not be placed.';
 

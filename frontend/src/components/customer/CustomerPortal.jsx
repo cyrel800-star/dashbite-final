@@ -1055,5 +1055,16 @@ export default function CustomerPortal(props) {
     ),
   };
 
-  return <PortalFrame role="CUSTOMER" {...props} placeholder="Search for food, restaurants…" screens={screens} />;
+  return (
+    <PortalFrame
+      role="CUSTOMER"
+      {...props}
+      placeholder="Search for food, restaurants…"
+      screens={screens}
+      onNavigate={() => {
+        setOrderConfirmation(null);
+        setSelectedRestaurant(null);
+      }}
+    />
+  );
 }

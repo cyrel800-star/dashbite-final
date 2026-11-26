@@ -117,6 +117,11 @@ class OrderLifecycleService
             'meta'        => $meta,
         ]);
 
+        // Send notification to customer
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order, $to->value));
+        }
+
         return $order->fresh();
     }
 

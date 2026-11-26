@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Providers;
-
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -45,6 +45,12 @@ class AppServiceProvider extends ServiceProvider
                         'retry_after' => (int) ($headers['Retry-After'] ?? 60),
                     ], 429, $headers);
                 });
+        });
+
+        // Tell Laravel to point the password reset email to the React frontend
+        ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            return $frontendUrl . "/?token=" . $token . "&email=" . $notifiable->getEmailForPasswordReset();
         });
     }
 }

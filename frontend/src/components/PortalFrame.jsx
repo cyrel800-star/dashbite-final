@@ -4,9 +4,13 @@ import { Empty, PortalShell } from "../ui/components.jsx";
 import { ProfilePage, SettingsPage } from "./ProfileSettings.jsx";
 
 // Shared portal router for role screens, profile, and settings.
-export default function PortalFrame({ role, user, setUser, img, setImg, onLogout, placeholder, screens, isGuest, onSwitch }) {
+export default function PortalFrame({ role, user, setUser, img, setImg, onLogout, placeholder, screens, isGuest, onSwitch, onNavigate }) {
   // 1. Force guests to land on "browse" instead of "dash"
   const [view, setView] = useState(isGuest ? "browse" : "dash");
+  const handleSetView = (newView) => {
+    setView(newView);
+    if (onNavigate) onNavigate(); // This clears the cart state
+  };
   const [q, setQ] = useState("");
   
   // 2. Filter the sidebar so guests only see "Browse Restaurants"
@@ -24,7 +28,7 @@ export default function PortalFrame({ role, user, setUser, img, setImg, onLogout
   else body = <Empty icon="🧭"><b>{current[2]}</b><br />No records are available for this section yet.</Empty>;
   
   return (
-    <PortalShell role={role} nav={nav} view={view} setView={setView} user={user} img={img} placeholder={placeholder} q={q} setQ={setQ} onLogout={onLogout} isGuest={isGuest} onSwitch={onSwitch}>
+    <PortalShell role={role} nav={nav} view={view} setView={handleSetView} user={user} img={img} placeholder={placeholder} q={q} setQ={setQ} onLogout={onLogout} isGuest={isGuest} onSwitch={onSwitch}>
       {body}
     </PortalShell>
   );

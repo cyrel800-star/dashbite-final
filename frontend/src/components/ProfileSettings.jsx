@@ -75,6 +75,9 @@ export function SettingsPage({ onLogout, role }) {
   const [featureImages, setFeatureImages] = usePersistentState(LOCAL_KEYS.featureImages, {});
   const [imageError, setImageError] = useState("");
   const [imageDraft, setImageDraft] = useState(null);
+  
+  // THIS IS WHERE THE MODAL STATE GOES
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = preferences.darkMode ? "dark" : "light";
@@ -118,12 +121,55 @@ export function SettingsPage({ onLogout, role }) {
         </div>)}
         <div className="msg" role="alert">{imageError}</div>
       </section>}
-      <button className="btn ol sm" style={{ marginTop: 12 }} onClick={onLogout}>Log Out</button>
+
+      <button className="btn ol sm" style={{ marginTop: 12 }} onClick={() => setShowLogoutModal(true)}>Log Out</button>
+      
       {imageDraft && <ImageAdjuster src={imageDraft.src} aspect={imageDraft.aspect} title={imageDraft.label} onCancel={() => setImageDraft(null)} onSave={(image) => {
         setFeatureImages((current) => ({ ...current, [imageDraft.key]: image }));
         setImageDraft(null);
         toast("Feature image saved on this device.");
       }} onError={setImageError} />}
+
+      {/* --- LOGOUT MODAL --- */}
+      {showLogoutModal && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(e) => e.target === e.currentTarget && setShowLogoutModal(false)}
+        >
+          <div className="card item-editor" style={{ maxWidth: 400, textAlign: "center" }}>
+            <div className="row" style={{ justifyContent: "center" }}>
+              <h3>Confirm Log Out</h3>
+            </div>
+            <p style={{ margin: "8px 0 16px", color: "var(--mu)", fontSize: "14px", lineHeight: "1.5" }}>
+              Are you sure you want to log out of DashBite?
+            </p>
+            <div className="row" style={{ justifyContent: "center", gap: 12 }}>
+              <button
+                type="button"
+                className="btn gh sm"
+                style={{ minWidth: 100 }}
+                onClick={() => setShowLogoutModal(false)}
+              >
+                No, Stay
+              </button>
+              <button
+                type="button"
+                className="btn sm"
+                style={{ minWidth: 100 }}
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  onLogout();
+                }}
+              >
+                Yes, Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* --- END LOGOUT MODAL --- */}
+
     </div>
   );
 }

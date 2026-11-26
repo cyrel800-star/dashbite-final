@@ -26,11 +26,29 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
   const [step, setStep] = useState("credentials");
   const [loginMethod, setLoginMethod] = useState("password"); // "password" or "otp"
   const [form, setForm] = useState({ email: "", password: "", role: "CUSTOMER" });
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [authData, setAuthData] = useState(null);
   
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) return setResetMsg("Please enter your email.");
+    setResetLoading(true);
+    setResetMsg("");
+    try {
+      await api.forgotPassword({ email: resetEmail });
+      setResetMsg("Success! Check your email for the reset link.");
+    } catch (err) {
+      setResetMsg(err.message || "Failed to send reset link.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleCredentialsSubmit = async (e) => {
     e.preventDefault();
@@ -162,13 +180,54 @@ export default function LoginFlow({ onSignedIn, onSwitch }) {
         {/* Conditional Password Field */}
         {loginMethod === "password" && (
           <div className="login-field">
-            <span>Password</span>
-            <PasswordField
+                        <PasswordField
               value={form.password}
               onChange={set("password")}
               autoComplete="current-password"
               disabled={loading}
             />
+            
+            {/* FORGOT PASSWORD LINK */}
+            <div style={{ textAlign: "right", marginTop: "6px" }}>
+              <button 
+                type="button" 
+                className="or" 
+                style={{ fontSize: "12px", background: "none", border: "none", cursor: "pointer" }}
+                onClick={() => setShowForgot(true)}
+              >
+                Forgot Password?
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* FORGOT PASSWORD MODAL */}
+        {showForgot && (
+          <div className="modal-backdrop" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && setShowForgot(false)}>
+            <div className="card" style={{ maxWidth: 400, padding: 24 }}>
+              <h3 style={{ marginTop: 0 }}>Reset Password</h3>
+              <p style={{ fontSize: "14px", color: "var(--mu)", marginBottom: 16 }}>
+                Enter your email and we'll send you a secure link to reset your password.
+              </p>
+              <div className="login-field">
+                <span>Email address</span>
+                <Field icon="✉️">
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="customer@test.com"
+                  />
+                </Field>
+              </div>
+              <div className="msg" role="alert">{resetMsg}</div>
+              <div className="row" style={{ marginTop: 16, justifyContent: "flex-end", gap: 10 }}>
+                <button type="button" className="btn gh sm" onClick={() => setShowForgot(false)}>Cancel</button>
+                <button type="button" className="btn sm" onClick={handleForgotPassword} disabled={resetLoading}>
+                  {resetLoading ? "Sending..." : "Send Link"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

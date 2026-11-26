@@ -1,3 +1,4 @@
+import { api } from "../lib/api.js";
 import { useEffect, useState } from "react";
 import logoUrl from "../../assets/logo.png";
 import logoWhiteUrl from "../../assets/logo-white.png";
@@ -80,17 +81,17 @@ export function RestaurantCard({ r, fav, onFav, onViewMenu = () => toast("Sign i
 
 // Portal navigation, top bar, and responsive shell.
 export function Sidebar({ nav, view, setView, open, onLogout, isGuest, onSwitch }) {
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   return (
     <aside className={`side ${open ? "open" : ""}`}>
-      <div 
+        <div 
         onClick={() => {
           if (isGuest && onSwitch) onSwitch("home");
-          else if (onLogout) onLogout();
+          else setView("dash");
         }}
       >
         <Logo dark style={{ cursor: "pointer", marginBottom: 20 }} />
       </div>
-      
       {nav.map(([key, icon, label, badge]) => (
         <button key={key} className={key === view ? "on" : ""} onClick={() => setView(key)}>
           <Icon name={icon} size={19} />{label}{badge && <span className="badge">{badge}</span>}
@@ -113,28 +114,149 @@ export function Sidebar({ nav, view, setView, open, onLogout, isGuest, onSwitch 
       ) : (
         <>
           <span className="sp" />
-          <button onClick={onLogout}><Icon name="logout" size={19} />Log Out</button>
+         <button onClick={() => setShowLogoutModal(true)}><Icon name="logout" size={19} />Log Out</button>
         </>
       )}
       
-      <div className="ad">Good Food<br /><span className="or">Faster Delivery</span></div>
+            <div className="ad">Good Food<br /><span className="or">Faster Delivery</span></div>
+
+      {showLogoutModal && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(e) => e.target === e.currentTarget && setShowLogoutModal(false)}
+        >
+          <div className="card item-editor" style={{ maxWidth: 400, textAlign: "center" }}>
+            <div className="row" style={{ justifyContent: "center" }}>
+              <h3>Confirm Log Out</h3>
+            </div>
+            <p style={{ margin: "8px 0 16px", color: "var(--mu)", fontSize: "14px", lineHeight: "1.5" }}>
+              Are you sure you want to log out of DashBite?
+            </p>
+            <div className="row" style={{ justifyContent: "center", gap: 12 }}>
+              <button
+                type="button"
+                className="btn gh sm"
+                style={{ minWidth: 100 }}
+                onClick={() => setShowLogoutModal(false)}
+              >
+                No, Stay
+              </button>
+              <button
+                type="button"
+                className="btn sm"
+                style={{ minWidth: 100 }}
+                onClick={() => {
+                  setShowLogoutModal(false);
+                  onLogout();
+                }}
+              >
+                Yes, Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </aside>
   );
 }
 
 // Search, notifications, and account controls above every portal screen.
+// Search, notifications, and account controls above every portal screen.
 export function TopBar({ placeholder, q, setQ, user, img, role, onMenu, onProfile, isGuest }) {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await api.getNotifications();
+      setNotifications(data.notifications);
+      setUnreadCount(data.unread_count);
+    } catch (err) {
+      console.error("Failed to load notifications", err);
+    }
+  };
+
+  // Fetch on load and poll every 30 seconds
+  useEffect(() => {
+    if (!isGuest) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isGuest]);
+
+  const handleMarkAllRead = async () => {
+    await api.markAllNotificationsRead();
+    fetchNotifications();
+  };
+
+  const handleRead = async (id) => {
+    await api.markNotificationRead(id);
+    fetchNotifications();
+  };
+
   return (
     <div className="top">
+      {/* Mobile Menu Button */}
       <button className="ib menu-btn" onClick={onMenu} aria-label="Menu"><Icon name="menu" /></button>
+      
+      {/* Global Search Field */}
       <label className="fld"><Icon name="search" size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} /></label>
       
+      {/* NOTIFICATION BELL */}
       {!isGuest && (
-        <button className="ib" onClick={() => toast("3 new notifications (sample data)")} aria-label="Notifications">
-          <Icon name="bell" /><span className="badge">3</span>
-        </button>
+        <div style={{ position: "relative" }}>
+          <button className="ib" onClick={() => setShowNotifications(!showNotifications)} aria-label="Notifications">
+            <Icon name="bell" />
+            {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+          </button>
+
+          {showNotifications && (
+            <div 
+              className="card" 
+              style={{
+                position: "absolute", top: "calc(100% + 10px)", right: 0, width: 320, zIndex: 50,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.3)", textAlign: "left"
+              }}
+            >
+              <div className="row" style={{ marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid var(--ln)" }}>
+                <h3 style={{ margin: 0, fontSize: "15px" }}>Notifications</h3>
+                {unreadCount > 0 && (
+                  <button type="button" className="btn gh sm" style={{ padding: "3px 8px", fontSize: "11px" }} onClick={handleMarkAllRead}>
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div style={{ maxHeight: 280, overflowY: "auto" }}>
+                {notifications.length === 0 ? (
+                  <p style={{ textAlign: "center", color: "var(--mu)", fontSize: "13px", padding: "20px 0" }}>No new notifications</p>
+                ) : (
+                  notifications.map((n) => (
+                    <div 
+                      key={n.id} 
+                      className="li" 
+                      style={{ cursor: "pointer", opacity: n.read_at ? 0.5 : 1 }} 
+                      onClick={() => { if(!n.read_at) handleRead(n.id); setShowNotifications(false); }}
+                    >
+                      <Icon name={n.data.icon || "bell"} size={20} color="var(--orange)" />
+                      <div className="f">
+                        <strong>{n.data.title}</strong>
+                        <small>{n.data.message}</small>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       )}
       
+      {/* User Identity / Profile Button */}
       {isGuest ? (
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px", background: "rgba(255, 107, 0, 0.1)", padding: "8px 16px", borderRadius: "20px", border: "1px solid var(--orange)" }}>
           <Icon name="user" size={16} color="var(--orange)" />

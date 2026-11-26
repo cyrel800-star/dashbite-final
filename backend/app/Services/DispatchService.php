@@ -57,6 +57,12 @@ class DispatchService
                 'status'              => 'pending',
                 'offered_at'          => now(),
             ]);
+
+            // Notify the Rider
+            $riderUser = \App\Models\User::find($rider->user_id);
+            if ($riderUser) {
+                $riderUser->notify(new \App\Notifications\NewDeliveryOffer($order));
+            }
         }
 
         return $attempt->fresh(['offers']);
@@ -172,6 +178,16 @@ class DispatchService
             ]);
 
             RiderProfile::where('user_id', $rider->id)->update(['is_available' => false]);
+                        // Notify Customer
+            if ($order->customer) {
+                $order->customer->notify(new \App\Notifications\RiderAssigned($order, $rider));
+            }
+
+            // Notify Restaurant Staff
+            $restaurantStaff = \App\Models\User::where('restaurant_id', $order->restaurant_id)->get();
+            foreach ($restaurantStaff as $staffUser) {
+                $staffUser->notify(new \App\Notifications\RiderAssigned($order, $rider));
+            }
 
             return true;
         });

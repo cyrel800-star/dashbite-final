@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getPreviewSession, startPreviewSession, clearPreviewSession } from "./lib/previewSession.js";
 import { ROLES } from "./data/constants.js";
 import { setAuthToken } from "./lib/api.js";
 import Landing from "./components/Landing.jsx";
 import LoginFlow from "./components/LoginFlow.jsx";
+import ResetPasswordFlow from "./components/ResetPasswordFlow.jsx";
 import SignupFlow from "./components/SignupFlow.jsx";
 import CustomerPortal from "./components/customer/CustomerPortal.jsx";
 import RestaurantPortal from "./components/restaurant/RestaurantPortal.jsx";
@@ -19,7 +20,20 @@ const DEMO_NAMES = { CUSTOMER: "Archie Demo", RESTAURANT: "Burger House", RIDER:
 // Restore the preview session and its profile from this browser.
 export default function App() {
   const [screen, setScreen] = useState("home");
+  const [resetToken, setResetToken] = useState(null);
+  const [resetEmail, setResetEmail] = useState(null);
   const [session, setSession] = useState(() => ROLES.map((r) => getPreviewSession(r)).find(Boolean) || null);
+  useEffect(() => {
+    // Check if URL has ?token=...&email=...
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const email = params.get("email");
+
+    if (token && email) {
+      setResetToken(token);
+      setResetEmail(email);
+    }
+  }, []);
   const [user, setUser] = useState(() => {
     if (!session) return { name: "Archie Demo", email: "", phone: "+63 912 345 6789" };
     const savedProfile = readLocalData(getProfileKey(session.role, session.email), null);
@@ -54,6 +68,20 @@ export default function App() {
 
   // Render the current auth, landing, or portal screen.
   const Portal = session && PORTALS[session.role];
+  if (resetToken) {
+    return (
+      <ResetPasswordFlow
+        token={resetToken}
+        email={resetEmail}
+        onComplete={() => {
+          setResetToken(null);
+          setScreen("signin");
+          window.history.replaceState({}, document.title, "/");
+        }}
+      />
+    );
+  }
+
   return (
     <>
             {Portal ? <Portal user={user} setUser={setUser} img={img} setImg={setImg} onLogout={logout} session={session} />
