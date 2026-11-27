@@ -139,6 +139,15 @@ export const api = Object.freeze({
   getOrder(id) {
     return request(`/orders/${id}`);
   },
+  getMessages(orderId) {
+    return request(`/orders/${orderId}/messages`);
+  },
+  sendChatMessage(orderId, body) {
+    return request(`/orders/${orderId}/messages`, {
+      method: "POST",
+      body: { body },
+    });
+  },
   cancelOrder(id) {
     return request(`/orders/${id}/cancel`, { method: "POST" });
   },

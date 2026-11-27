@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PortalFrame from "../PortalFrame.jsx";
+import ChatPanel from "../ChatPanel.jsx";
 import ImageAdjuster from "../ImageAdjuster.jsx";
 import { heroBurger, burger, pizza, noodles, chicken } from "../../data/images.js";
 import { Chart, Empty, Food, StatCard, Tag, toast } from "../../ui/components.jsx";
@@ -516,55 +517,14 @@ export default function RestaurantPortal(props) {
     ),
 
     chat: () => (
-      <section className="card">
-        <h3>Customer Chat</h3>
-        {orders.length ? (
-          <>
-            <form className="local-form" onSubmit={sendReply}>
-              <label>
-                Order
-                <select
-                  className="text-input"
-                  value={replyOrder}
-                  onChange={(e) => setReplyOrder(e.target.value)}
-                  required
-                >
-                  <option value="">Select an order</option>
-                  {orders.map((order) => (
-                    <option key={order.id} value={order.id}>
-                      Order #{order.id} · {order.customer?.name || "Customer"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Reply
-                <textarea
-                  className="text-input"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  maxLength={500}
-                  required
-                />
-              </label>
-              <button className="btn">Send Reply</button>
-            </form>
-            {messages
-              .filter((message) => orders.some((order) => String(order.id) === String(message.orderId)))
-              .map((message) => (
-                <div className="li" key={message.id}>
-                  <div className="f">
-                    <b>{message.name} · Order #{message.orderId}</b>
-                    <small>{message.text}</small>
-                  </div>
-                  <small>{new Date(message.createdAt).toLocaleString()}</small>
-                </div>
-              ))}
-          </>
-        ) : (
-          <Empty icon="💬">Customer messages about your orders will appear here.</Empty>
-        )}
-      </section>
+      <ChatPanel
+        role="restaurant"
+        title="Customer & Rider Chat"
+        orders={orders.map((o) => ({
+          id: o.id,
+          label: `Order #${o.id} · ${o.customer?.name || "Customer"}`,
+        }))}
+      />
     ),
   };
 

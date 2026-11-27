@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import PortalFrame from "../PortalFrame.jsx";
+import ChatPanel from "../ChatPanel.jsx";
 import { CATEGORIES } from "../../data/sample.js";
 import { burger, pizza, noodles, chicken, heroBurger } from "../../data/images.js";
 import { Empty, Food, RestaurantCard, Tag, toast } from "../../ui/components.jsx";
@@ -182,6 +183,12 @@ export default function CustomerPortal(props) {
   const [rating, setRating] = useState("5");
   const [chatText, setChatText] = useState("");
   const [chatOrder, setChatOrder] = useState("");
+
+  useEffect(() => {
+    if (orders.length > 0 && !chatOrder) {
+      setChatOrder(String(orders[0].id));
+    }
+  }, [orders, chatOrder]);
 
   // Load real restaurants and customer order history from backend
   const loadRestaurants = async () => {
@@ -371,10 +378,12 @@ export default function CustomerPortal(props) {
     }
   };
 
-  const sendMessage = (event) => {
+    const sendMessage = (event) => {
     event.preventDefault();
     const text = chatText.trim();
     if (!orders.some((order) => String(order.id) === String(chatOrder)) || !text) return;
+
+    // 1. Add the customer's message
     setMessages((saved) => [
       ...saved,
       {
@@ -388,6 +397,21 @@ export default function CustomerPortal(props) {
     ]);
     setChatText("");
     toast("Message sent to the restaurant.");
+
+    // 2. Simulate a restaurant auto-reply after 2 seconds
+    setTimeout(() => {
+      setMessages((saved) => [
+        ...saved,
+        {
+          id: `message-${Date.now() + 1}`,
+          orderId: chatOrder,
+          sender: "restaurant",
+          name: "Restaurant Staff",
+          text: "Got it! We received your message and are looking into it. Thanks for reaching out!",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    }, 2000);
   };
 
   const findRestaurants = (q = "") =>
@@ -1003,55 +1027,16 @@ export default function CustomerPortal(props) {
     ),
 
     chat: () => (
-      <section className="card">
-        <h3>Restaurant Chat</h3>
-        {orders.length ? (
-          <>
-            <form className="local-form" onSubmit={sendMessage}>
-              <label>
-                Order
-                <select
-                  className="text-input"
-                  value={chatOrder}
-                  onChange={(e) => setChatOrder(e.target.value)}
-                  required
-                >
-                  <option value="">Select an order</option>
-                  {orders.map((order) => (
-                    <option key={order.id} value={order.id}>
-                      Order #{order.id} · {typeof order.restaurant === "string" ? order.restaurant : order.restaurant?.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Message
-                <textarea
-                  className="text-input"
-                  value={chatText}
-                  onChange={(e) => setChatText(e.target.value)}
-                  maxLength={500}
-                  required
-                />
-              </label>
-              <button className="btn">Send Message</button>
-            </form>
-            {messages
-              .filter((message) => orders.some((order) => String(order.id) === String(message.orderId)))
-              .map((message) => (
-                <div className="li" key={message.id}>
-                  <div className="f">
-                    <b>{message.name} · Order #{message.orderId}</b>
-                    <small>{message.text}</small>
-                  </div>
-                  <small>{new Date(message.createdAt).toLocaleString()}</small>
-                </div>
-              ))}
-          </>
-        ) : (
-          <Empty icon="💬">Place an order to start a conversation with the restaurant.</Empty>
-        )}
-      </section>
+      <ChatPanel
+        role="customer"
+        title="Restaurant Chat"
+        orders={orders.map((o) => ({
+          id: o.id,
+          label: `Order #${o.id} · ${
+            typeof o.restaurant === "string" ? o.restaurant : o.restaurant?.name || ""
+          }`,
+        }))}
+      />
     ),
   };
 

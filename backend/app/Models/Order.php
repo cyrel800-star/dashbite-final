@@ -77,6 +77,11 @@ class Order extends Model
         return $this->hasOne(Rating::class);
     }
 
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
     // ADDED: The cancellation logic
     public function getCanCancelAttribute()
     {

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\ComplaintController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\RestaurantMenuController;
@@ -37,6 +38,14 @@ Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::patch('{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+// ============================================
+// CHAT / MESSAGES (order-scoped, all roles)
+// ============================================
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('orders/{order}/messages', [MessageController::class, 'index']);
+    Route::post('orders/{order}/messages', [MessageController::class, 'store']);
 });
 
 // ============================================

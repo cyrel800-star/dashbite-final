@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import PortalFrame from "../PortalFrame.jsx";
+import ChatPanel from "../ChatPanel.jsx";
 import { heroRider } from "../../data/images.js";
 import { Chart, Empty, Food, Tag, toast } from "../../ui/components.jsx";
 import { usePersistentState } from "../../lib/localData.js";
@@ -673,50 +674,14 @@ export default function RiderPortal(props) {
     ),
 
     chat: () => (
-      <section className="card">
-        <h3>Customer Chat</h3>
-        {activeDeliveries.length ? (
-          <>
-            <form className="local-form" onSubmit={sendMessage}>
-              <label>
-                Delivery
-                <select className="text-input" value={chatOrder} onChange={(e) => setChatOrder(e.target.value)} required>
-                  <option value="">Select a delivery</option>
-                  {activeDeliveries.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      Order #{d.id} · {d.restaurant?.name || "Restaurant"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Message
-                <textarea
-                  className="text-input"
-                  value={chatText}
-                  onChange={(e) => setChatText(e.target.value)}
-                  maxLength={500}
-                  required
-                />
-              </label>
-              <button className="btn">Send Message</button>
-            </form>
-            {messages
-              .filter((m) => activeDeliveries.some((d) => String(d.id) === String(m.orderId)))
-              .map((m) => (
-                <div className="li" key={m.id}>
-                  <div className="f">
-                    <b>{m.name} · Order #{m.orderId}</b>
-                    <small>{m.text}</small>
-                  </div>
-                  <small>{new Date(m.createdAt).toLocaleString()}</small>
-                </div>
-              ))}
-          </>
-        ) : (
-          <Empty icon="💬">Chat becomes available after you accept an active delivery.</Empty>
-        )}
-      </section>
+      <ChatPanel
+        role="rider"
+        title="Customer & Restaurant Chat"
+        orders={activeDeliveries.map((d) => ({
+          id: d.id,
+          label: `Order #${d.id} · ${d.restaurant?.name || "Restaurant"}`,
+        }))}
+      />
     ),
   };
 
